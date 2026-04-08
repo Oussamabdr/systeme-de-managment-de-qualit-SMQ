@@ -1,0 +1,20 @@
+{
+  "name": "iso",
+  "version": "1.0.0",
+  "description": "Full-stack web application to manage an ISO 9001 certification project for ESI.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix frontend run build",
+    "seed": "npm --prefix backend run db:seed",
+    "db:push": "npm --prefix backend exec prisma db push --skip-generate",
+    "test": "echo \"No automated tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

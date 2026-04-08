@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: iso-qms-api
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npm run db:generate
+    startCommand: npm start
+    postDeployCommand: npx prisma migrate deploy && npm run db:seed
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: CORS_ORIGIN
+        sync: false

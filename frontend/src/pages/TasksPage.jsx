@@ -1,0 +1,302 @@
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { DndContext, PointerSensor, closestCorners, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import api from "../api/client";
+import PageHeader from "../components/ui/PageHeader";
+import { getErrorMessage } from "../utils/http";
+import { Card, CardHeader } from "../components/ui/Card";
+import { Input, Select, TextArea } from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import TaskCard from "../components/tasks/TaskCard";
+import TaskRow from "../components/tasks/TaskRow";
+import { useAuthStore } from "../store/authStore";
+
+const statusMap = {
+  TODO: "Todo",
+  IN_PROGRESS: "In Progress",
+  DONE: "Done",
+};
+
+const initialForm = {
+  title: "",
+  description: "",
+  projectId: "",
+  processId: "",
+  assigneeId: "",
+  dueDate: "",
+};
+
+function KanbanColumn({ id, title, count, children }) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+
+  return (
+    <Card
+      className={`min-h-70 p-4 transition-colors duration-200 ${isOver ? "bg-emerald-50/60" : "bg-white"}`}
+      ref={setNodeRef}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <Badge tone="slate">{count}</Badge>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </Card>
+  );
+}
+
+export default function TasksPage() {
+  const [searchParams] = useSearchParams();
+  const user = useAuthStore((state) => state.user);
+  const isProjectManager = user?.role === "PROJECT_MANAGER";
+  const isTeamMember = user?.role === "TEAM_MEMBER";
+  const canCreateTask = isProjectManager;
+  const canManageAssignment = isProjectManager;
+
+  const processFilterFromUrl = searchParams.get("processId") || "";
+  const quickAssign = searchParams.get("quickAssign") === "1";
+
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [processes, setProcesses] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [form, setForm] = useState(initialForm);
+  const [viewMode, setViewMode] = useState("table");
+  const [filterProcessId, setFilterProcessId] = useState(processFilterFromUrl);
+  const [error, setError] = useState("");
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const load = async () => {
+    try {
+      const requests = [api.get("/tasks"), api.get("/projects"), api.get("/processes")];
+      if (canManageAssignment) {
+        requests.push(api.get("/users"));
+      }
+
+      const [tasksRes, projectsRes, processRes, usersRes] = await Promise.all(requests);
+      setTasks(tasksRes.data.data || []);
+      setProjects(projectsRes.data.data || []);
+      setProcesses(processRes.data.data || []);
+      setUsers(usersRes?.data?.data || []);
+
+      setForm((prev) => ({
+        ...prev,
+        projectId: prev.projectId || projectsRes.data.data?.[0]?.id || "",
+        processId: prev.processId || processFilterFromUrl || processRes.data.data?.[0]?.id || "",
+      }));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    setFilterProcessId(processFilterFromUrl);
+    setForm((prev) => ({
+      ...prev,
+      processId: processFilterFromUrl || prev.processId,
+    }));
+  }, [processFilterFromUrl]);
+
+  const visibleTasks = useMemo(
+    () => (filterProcessId ? tasks.filter((task) => task.processId === filterProcessId) : tasks),
+    [tasks, filterProcessId],
+  );
+
+  const grouped = useMemo(
+    () => ({
+      TODO: visibleTasks.filter((task) => task.status === "TODO"),
+      IN_PROGRESS: visibleTasks.filter((task) => task.status === "IN_PROGRESS"),
+      DONE: visibleTasks.filter((task) => task.status === "DONE"),
+    }),
+    [visibleTasks],
+  );
+
+  const createTask = async (event) => {
+    event.preventDefault();
+    if (!canCreateTask) return;
+
+    try {
+      await api.post("/tasks", {
+        title: form.title,
+        description: form.description || null,
+        projectId: form.projectId,
+        processId: form.processId,
+        assigneeId: form.assigneeId || null,
+        dueDate: form.dueDate || null,
+        status: "TODO",
+      });
+
+      setForm((prev) => ({
+        ...initialForm,
+        projectId: prev.projectId,
+        processId: prev.processId,
+      }));
+      await load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const updateTaskInline = async (taskId, payload) => {
+    try {
+      await api.patch(`/tasks/${taskId}`, payload);
+      await load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const updateTaskStatus = async (taskId, status) => {
+    const previous = tasks;
+    setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, status } : task)));
+
+    try {
+      await api.patch(`/tasks/${taskId}`, { status });
+      await load();
+    } catch (err) {
+      setTasks(previous);
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const getDropStatus = (overId) => {
+    if (!overId) return null;
+    if (["TODO", "IN_PROGRESS", "DONE"].includes(overId)) return overId;
+    if (overId.startsWith("task:")) {
+      const taskId = overId.replace("task:", "");
+      return visibleTasks.find((task) => task.id === taskId)?.status || null;
+    }
+    return null;
+  };
+
+  const onDragEnd = (event) => {
+    const activeId = event.active?.id?.toString();
+    const overId = event.over?.id?.toString();
+    if (!activeId || !overId || !activeId.startsWith("task:")) return;
+
+    const taskId = activeId.replace("task:", "");
+    const destinationStatus = getDropStatus(overId);
+    const source = visibleTasks.find((task) => task.id === taskId);
+
+    if (!source || !destinationStatus || source.status === destinationStatus) return;
+    updateTaskStatus(taskId, destinationStatus);
+  };
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Tasks" subtitle="Create and assign inline. No extra assignment screen." />
+      {error ? <p className="saas-card p-4 text-sm text-rose-700">{error}</p> : null}
+
+      {quickAssign ? (
+        <div className="saas-card border border-emerald-200 bg-emerald-50/50 p-4 text-sm text-emerald-900">
+          Quick assign mode enabled from process view. Your process filter is pre-selected.
+        </div>
+      ) : null}
+
+      {canCreateTask ? (
+        <section className="saas-card p-5">
+          <CardHeader title="Create Task" subtitle="Assignment happens during creation." />
+          <form className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3" onSubmit={createTask}>
+            <Input placeholder="Task title" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
+            <Input placeholder="Deadline" type="date" value={form.dueDate} onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))} />
+            <Select value={form.projectId} onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))} required>
+              <option value="">Project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
+            </Select>
+            <Select value={form.processId} onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))} required>
+              <option value="">Process</option>
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>{process.name}</option>
+              ))}
+            </Select>
+            <Select value={form.assigneeId} onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}>
+              <option value="">Assignee (optional)</option>
+              {users.map((member) => (
+                <option key={member.id} value={member.id}>{member.fullName}</option>
+              ))}
+            </Select>
+            <TextArea className="md:col-span-2 xl:col-span-3" rows={3} placeholder="Description" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+            <Button className="md:col-span-2 xl:col-span-3">Create Task</Button>
+          </form>
+        </section>
+      ) : null}
+
+      <section className="saas-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Select className="w-full sm:w-72" value={filterProcessId} onChange={(event) => setFilterProcessId(event.target.value)}>
+            <option value="">All processes</option>
+            {processes.map((process) => (
+              <option key={process.id} value={process.id}>{process.name}</option>
+            ))}
+          </Select>
+
+          <div className="flex items-center gap-2">
+            <Button type="button" variant={viewMode === "table" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("table")}>Table</Button>
+            <Button type="button" variant={viewMode === "kanban" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("kanban")}>Kanban</Button>
+          </div>
+        </div>
+      </section>
+
+      {viewMode === "table" ? (
+        <Card className="p-0 overflow-hidden">
+          <div className="px-5 pt-5">
+            <CardHeader title="Inline Assignment Table" subtitle="Edit process, assignee, and deadline directly in each row." />
+          </div>
+          <div className="overflow-x-auto pb-4">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500">
+                  <th className="px-4 py-3">Task</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Process</th>
+                  <th className="px-4 py-3">Assignee</th>
+                  <th className="px-4 py-3">Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    processes={processes}
+                    users={users}
+                    canManageAssignment={canManageAssignment}
+                    canEditStatus={isProjectManager || (isTeamMember && task.assigneeId === user?.id)}
+                    onInlineChange={updateTaskInline}
+                    onStatusChange={updateTaskStatus}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+          <section className="grid gap-4 lg:grid-cols-3">
+            {Object.entries(grouped).map(([status, list]) => (
+              <KanbanColumn key={status} id={status} title={statusMap[status]} count={list.length}>
+                {list.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    processes={processes}
+                    users={users}
+                    canManageAssignment={canManageAssignment}
+                    canEditStatus={isProjectManager || (isTeamMember && task.assigneeId === user?.id)}
+                    onStatusChange={updateTaskStatus}
+                    onInlineChange={updateTaskInline}
+                  />
+                ))}
+              </KanbanColumn>
+            ))}
+          </section>
+        </DndContext>
+      )}
+    </div>
+  );
+}
