@@ -65,29 +65,42 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Document Management" subtitle="Upload and link evidence files to tasks or processes." />
+      <PageHeader title="Evidence and Records Hub" subtitle="Control, store, and trace quality evidence across tasks and processes." />
 
       <section className="saas-card p-5">
         <CardHeader title="Upload Document" subtitle="Attach proof files to a process or task." />
         {isTeamMember ? <p className="mt-2 text-xs text-slate-500">Team members can upload only to their assigned tasks.</p> : null}
         {error ? <p className="mt-2 text-sm text-rose-700">{error}</p> : null}
         <form className="mt-3 grid gap-3 md:grid-cols-3" onSubmit={upload}>
-          <Input type="file" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} required />
-          <Select value={form.taskId} onChange={(e) => setForm((p) => ({ ...p, taskId: e.target.value }))}>
-            <option value="">{isTeamMember ? "Attach to task (required)" : "Attach to task (optional)"}</option>
-            {tasks.map((task) => (
-              <option key={task.id} value={task.id}>{task.title}</option>
-            ))}
-          </Select>
-          {isTeamMember ? (
-            <Input value="Process attachment not allowed for team members" readOnly />
-          ) : (
-            <Select value={form.processId} onChange={(e) => setForm((p) => ({ ...p, processId: e.target.value }))}>
-              <option value="">Attach to process (optional)</option>
-              {processes.map((process) => (
-                <option key={process.id} value={process.id}>{process.name}</option>
+          <div className="field-group">
+            <label className="field-label">Evidence File</label>
+            <Input type="file" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} required />
+            <p className="field-help">Upload objective evidence (PDF, image, or office document).</p>
+          </div>
+          <div className="field-group">
+            <label className="field-label">Linked Task</label>
+            <Select value={form.taskId} onChange={(e) => setForm((p) => ({ ...p, taskId: e.target.value }))}>
+              <option value="">{isTeamMember ? "Select assigned task (required)" : "Select task (optional)"}</option>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>{task.title}</option>
               ))}
             </Select>
+          </div>
+          {isTeamMember ? (
+            <div className="field-group">
+              <label className="field-label">Linked Process</label>
+              <Input value="Process attachment not allowed for team members" readOnly />
+            </div>
+          ) : (
+            <div className="field-group">
+              <label className="field-label">Linked Process</label>
+              <Select value={form.processId} onChange={(e) => setForm((p) => ({ ...p, processId: e.target.value }))}>
+                <option value="">Select process (optional)</option>
+                {processes.map((process) => (
+                  <option key={process.id} value={process.id}>{process.name}</option>
+                ))}
+              </Select>
+            </div>
           )}
           <Button className="md:col-span-3">Upload</Button>
         </form>

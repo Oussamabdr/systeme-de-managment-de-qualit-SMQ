@@ -1,15 +1,25 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --bg: #f8fafc;
+  --bg: #f5f8fb;
   --card: #ffffff;
   --text: #0f172a;
   --muted: #64748b;
-  --primary: #3d7b67;
-  --primary-soft: #ecf4f1;
-  --line: #e2e8f0;
-  --ring: rgba(61, 123, 103, 0.28);
+  --primary: #1f6d64;
+  --primary-soft: #e6f3f1;
+  --line: #dce5ee;
+  --ring: rgba(31, 109, 100, 0.28);
+}
+
+html {
+  font-size: 17px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
 }
 
 * {
@@ -19,9 +29,13 @@
 body {
   margin: 0;
   min-width: 320px;
-  font-family: "Inter", sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
   color: var(--text);
-  background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+  background:
+    radial-gradient(900px 420px at 12% -8%, rgba(31, 109, 100, 0.08), transparent 62%),
+    linear-gradient(180deg, #f8fafc 0%, #f2f6fa 100%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -38,16 +52,23 @@ h4,
 h5,
 h6 {
   margin: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
   letter-spacing: -0.02em;
 }
 
 .saas-card {
   border-radius: 16px;
   background: var(--card);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.045);
   padding: 24px;
 }
+
+.si-shell {
+  position: relative;
+}
+
+
 
 .saas-btn {
   display: inline-flex;
@@ -56,7 +77,7 @@ h6 {
   border-radius: 12px;
   border: 1px solid transparent;
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   transition: all 200ms ease;
   cursor: pointer;
@@ -104,7 +125,8 @@ h6 {
   background: #fff;
   color: #0f172a;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.45;
   transition: all 200ms ease;
 }
 
@@ -132,8 +154,40 @@ h6 {
 .surface {
   border-radius: 16px;
   background: var(--card);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.si-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.field-help {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.35;
 }
 
 .btn-primary {

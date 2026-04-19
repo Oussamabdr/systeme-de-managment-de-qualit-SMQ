@@ -56,6 +56,26 @@ export default function ProjectsPage() {
     }
   };
 
+  const applyProjectTemplate = (template) => {
+    if (template === "certification") {
+      setForm({
+        name: "ISO 9001 Certification Readiness",
+        description: "Coordinate gap closure, internal audit preparation, and management review milestones for certification readiness.",
+      });
+      return;
+    }
+
+    if (template === "supplier") {
+      setForm({
+        name: "Supplier Quality Improvement Program",
+        description: "Improve supplier conformity through audit planning, corrective actions, and performance monitoring KPIs.",
+      });
+      return;
+    }
+
+    setForm(initialForm);
+  };
+
   const startEdit = (project) => {
     setEditingProjectId(project.id);
     setEditForm({
@@ -105,7 +125,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Projects" subtitle="Track progress, monitor status, and map ISO processes." />
+      <PageHeader title="Program Portfolio" subtitle="Steer delivery performance, quality risk, and cross-process alignment." />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <Card className="p-0 overflow-hidden">
@@ -181,9 +201,27 @@ export default function ProjectsPage() {
           {canManage ? (
             <Card className="p-5">
               <CardHeader title="Create Project" subtitle="Add a new certification initiative." />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("certification")}>
+                  Use Certification Template
+                </Button>
+                <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("supplier")}>
+                  Use Supplier Template
+                </Button>
+                <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("reset")}>
+                  Reset
+                </Button>
+              </div>
               <form className="mt-3 space-y-3" onSubmit={createProject}>
-                <Input placeholder="Project name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
-                <TextArea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                <div className="field-group">
+                  <label className="field-label">Project Name</label>
+                  <Input placeholder="e.g. Internal Audit Readiness 2026" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
+                </div>
+                <div className="field-group">
+                  <label className="field-label">Description</label>
+                  <TextArea placeholder="State objective, scope, and expected quality outcomes." rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                  <p className="field-help">Tip: describe measurable outcome and deadline context for easier steering.</p>
+                </div>
                 <Button className="w-full">Save Project</Button>
               </form>
             </Card>

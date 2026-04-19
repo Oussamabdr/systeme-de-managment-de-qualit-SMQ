@@ -68,6 +68,9 @@ export default function DashboardPage() {
   if (state.error) return <div className="saas-card p-6 text-rose-700">{state.error}</div>;
 
   const { summary, taskStatusDistribution, projectProgress, kpis } = state.data;
+  const pilotage = state.data?.pilotage;
+  const recommendedPlan = pilotage?.recommendedPlan || [];
+  const decisionHealth = pilotage?.decisionHealth || null;
   const doneTasks = taskStatusDistribution.find((item) => item.name === "Done")?.value || 0;
   const inProgressTasks = taskStatusDistribution.find((item) => item.name === "In Progress")?.value || 0;
   const todoTasks = taskStatusDistribution.find((item) => item.name === "Todo")?.value || 0;
@@ -116,13 +119,34 @@ export default function DashboardPage() {
     PROJECT_MANAGER: "Execution view focused on project delivery and bottlenecks.",
     TEAM_MEMBER: "Personal workbench view focused on task flow and priorities.",
   };
+  const snapshotTime = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date());
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title="QMS Dashboard"
+        title="Executive Pilotage Dashboard"
         subtitle={roleSubtitle[role] || roleSubtitle.TEAM_MEMBER}
       />
+
+      <section className="surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Control Snapshot</p>
+            <p className="mt-1 text-sm text-slate-700">Live decision view synchronized for governance reviews and operational follow-up.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="blue">Role: {role.replaceAll("_", " ")}</Badge>
+            <Badge tone={summary.delayedProjects > 0 ? "amber" : "green"}>
+              Delayed Projects: {summary.delayedProjects}
+            </Badge>
+            <Badge tone={summary.delayedTasks > 0 ? "red" : "green"}>Delayed Tasks: {summary.delayedTasks}</Badge>
+            <Badge tone="slate">Updated: {snapshotTime}</Badge>
+          </div>
+        </div>
+      </section>
 
       {isProjectManager ? (
         <section className="saas-card p-4">
@@ -155,6 +179,52 @@ export default function DashboardPage() {
           <StatCard title="In Progress Tasks" value={inProgressTasks} />
           <StatCard title="Delayed Tasks" value={summary.delayedTasks} tone="red" />
           <StatCard title="Completion Rate" value={`${globalCompletionRate}%`} tone="amber" hint={`Avg project progress: ${averageProjectProgress}%`} />
+        </section>
+      ) : null}
+
+      {isProjectManager ? (
+        <section className="grid gap-4 xl:grid-cols-[1fr_1.4fr]">
+          <Card className="p-5">
+            <CardHeader title="Decision Health" subtitle="Composite steering score for management review." />
+            {decisionHealth ? (
+              <>
+                <div className="mt-2 flex items-end gap-3">
+                  <p className="text-5xl font-semibold text-slate-900">{decisionHealth.score}</p>
+                  <Badge tone={decisionHealth.level === "CRITICAL" ? "red" : decisionHealth.level === "AT_RISK" ? "amber" : decisionHealth.level === "WATCH" ? "blue" : "green"}>
+                    {decisionHealth.level}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-500">
+                  Underperforming KPIs (&lt;80%): {decisionHealth.underperformingKpis}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">Decision score not available.</p>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <CardHeader title="Recommended Steering Plan" subtitle="Prioritized actions generated from live risk signals." />
+            <div className="space-y-2">
+              {recommendedPlan.length ? (
+                recommendedPlan.map((item, index) => (
+                  <article key={`${item.source}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-900">{item.action}</p>
+                      <Badge tone={item.priority === "CRITICAL" ? "red" : item.priority === "HIGH" ? "amber" : item.priority === "MEDIUM" ? "blue" : "green"}>
+                        {item.priority}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Source: {item.source}{item.correctiveActionId ? ` | CAPA: ${item.correctiveActionId}` : ""}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No recommended action right now.</p>
+              )}
+            </div>
+          </Card>
         </section>
       ) : null}
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown } from "lucide-react";
+import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { Input } from "../ui/Input";
 import Button from "../ui/Button";
@@ -8,37 +8,49 @@ import Button from "../ui/Button";
 const navItems = [
   {
     to: "/dashboard",
-    label: "Dashboard",
+    label: "Executive Dashboard",
     icon: LayoutDashboard,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
     to: "/projects",
-    label: "Projects",
+    label: "Program Portfolio",
     icon: FolderKanban,
     roles: ["ADMIN", "PROJECT_MANAGER"],
   },
   {
     to: "/processes",
-    label: "Processes",
+    label: "Process Architecture",
     icon: GitFork,
     roles: ["ADMIN", "PROJECT_MANAGER"],
   },
   {
     to: "/tasks",
-    label: "Tasks",
+    label: "Execution Board",
     icon: ListTodo,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
     to: "/documents",
-    label: "Documents",
+    label: "Evidence Vault",
     icon: FileText,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
+    to: "/non-conformities",
+    label: "NC Register",
+    icon: ShieldAlert,
+    roles: ["ADMIN", "PROJECT_MANAGER", "CAQ"],
+  },
+  {
+    to: "/corrective-actions",
+    label: "CAPA Command",
+    icon: ClipboardCheck,
+    roles: ["ADMIN", "PROJECT_MANAGER", "CAQ"],
+  },
+  {
     to: "/notifications",
-    label: "Alerts",
+    label: "Risk Alerts",
     icon: Bell,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
     hidden: true,
@@ -46,12 +58,14 @@ const navItems = [
 ];
 
 const titleMap = {
-  "/dashboard": "Dashboard",
-  "/projects": "Projects",
-  "/processes": "Processes",
-  "/tasks": "Tasks",
-  "/documents": "Documents",
-  "/notifications": "Notifications",
+  "/dashboard": "Executive Dashboard",
+  "/projects": "Program Portfolio",
+  "/processes": "Process Architecture",
+  "/tasks": "Execution Board",
+  "/documents": "Evidence Vault",
+  "/non-conformities": "Non-Conformity Register",
+  "/corrective-actions": "CAPA Command Center",
+  "/notifications": "Risk Alerts Center",
 };
 
 export default function AppLayout() {
@@ -74,12 +88,12 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="mx-auto grid min-h-screen max-w-385 grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[248px_1fr]">
+    <div className="si-shell mx-auto grid min-h-screen max-w-385 grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[260px_1fr]">
       <aside className="surface h-fit p-5 lg:sticky lg:top-5">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">ESI QMS</p>
-          <h1 className="mt-2 text-[22px] font-semibold text-slate-900">ISO 9001 Hub</h1>
-          <p className="mt-2 text-sm text-slate-500">Precision workflows for quality certification.</p>
+          <h1 className="mt-2 text-[22px] font-semibold text-slate-900">SI Pilotage Hub</h1>
+          <p className="mt-2 text-sm text-slate-500">Operational control for ISO 9001 governance, CAPA, and process steering.</p>
         </div>
 
         <nav className="mt-8 flex flex-col gap-1.5">
@@ -104,6 +118,7 @@ export default function AppLayout() {
         <div className="mt-8 rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-sm">
           <p className="font-medium text-slate-900">{user?.fullName}</p>
           <p className="mt-0.5 text-xs uppercase tracking-wide text-slate-500">{user?.role?.replaceAll("_", " ")}</p>
+          <p className="mt-2 text-xs text-slate-500">Workspace role controls your quality governance perimeter.</p>
           <Button variant="subtle" className="mt-3 w-full" onClick={onLogout}>
             Sign out
           </Button>
@@ -113,8 +128,9 @@ export default function AppLayout() {
       <main className="space-y-5 pb-10">
         <header className="surface flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Quality Operations / {pageTitle}</p>
             <h2 className="text-xl font-semibold text-slate-900">{pageTitle}</h2>
-            <p className="text-sm text-slate-500">Manage ISO 9001 operations with calm precision.</p>
+            <p className="text-sm text-slate-500">Manage ISO 9001 operations with traceability, accountability, and steering clarity.</p>
           </div>
 
           <div className="flex items-center gap-2">

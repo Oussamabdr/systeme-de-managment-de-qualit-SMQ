@@ -33,7 +33,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Notifications" subtitle="Overdue task and delayed project alerts." />
+      <PageHeader title="Risk and Delay Alerts" subtitle="Escalation feed for overdue tasks and delayed programs." />
 
       <section className="saas-card p-5">
         <CardHeader title="Overdue Tasks" subtitle="Items requiring immediate corrective action." action={<Badge tone="red">{overdueTasks.length}</Badge>} />

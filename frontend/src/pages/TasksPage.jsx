@@ -187,7 +187,7 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Tasks" subtitle="Create and assign inline. No extra assignment screen." />
+      <PageHeader title="Execution Control Board" subtitle="Coordinate assignments, deadlines, and operational throughput in one flow." />
       {error ? <p className="saas-card p-4 text-sm text-rose-700">{error}</p> : null}
 
       {quickAssign ? (
@@ -200,27 +200,46 @@ export default function TasksPage() {
         <section className="saas-card p-5">
           <CardHeader title="Create Task" subtitle="Assignment happens during creation." />
           <form className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3" onSubmit={createTask}>
-            <Input placeholder="Task title" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
-            <Input placeholder="Deadline" type="date" value={form.dueDate} onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))} />
-            <Select value={form.projectId} onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))} required>
-              <option value="">Project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </Select>
-            <Select value={form.processId} onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))} required>
-              <option value="">Process</option>
-              {processes.map((process) => (
-                <option key={process.id} value={process.id}>{process.name}</option>
-              ))}
-            </Select>
-            <Select value={form.assigneeId} onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}>
-              <option value="">Assignee (optional)</option>
-              {users.map((member) => (
-                <option key={member.id} value={member.id}>{member.fullName}</option>
-              ))}
-            </Select>
-            <TextArea className="md:col-span-2 xl:col-span-3" rows={3} placeholder="Description" value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+            <div className="field-group">
+              <label className="field-label">Task Title</label>
+              <Input placeholder="e.g. Validate supplier audit report" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
+            </div>
+            <div className="field-group">
+              <label className="field-label">Deadline</label>
+              <Input type="date" value={form.dueDate} onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))} />
+            </div>
+            <div className="field-group">
+              <label className="field-label">Project</label>
+              <Select value={form.projectId} onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))} required>
+                <option value="">Select project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="field-group">
+              <label className="field-label">Process</label>
+              <Select value={form.processId} onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))} required>
+                <option value="">Select process</option>
+                {processes.map((process) => (
+                  <option key={process.id} value={process.id}>{process.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="field-group">
+              <label className="field-label">Assignee</label>
+              <Select value={form.assigneeId} onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}>
+                <option value="">Select assignee (optional)</option>
+                {users.map((member) => (
+                  <option key={member.id} value={member.id}>{member.fullName}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="field-group md:col-span-2 xl:col-span-3">
+              <label className="field-label">Description</label>
+              <TextArea rows={3} placeholder="Describe expected deliverable, acceptance criteria, and dependencies." value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+              <p className="field-help">Tip: include measurable completion criteria to simplify review and closure.</p>
+            </div>
             <Button className="md:col-span-2 xl:col-span-3">Create Task</Button>
           </form>
         </section>

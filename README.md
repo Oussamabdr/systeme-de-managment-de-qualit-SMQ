@@ -1,14 +1,14 @@
-# QMS ISO 9001 Management Platform
+# ISO 9001 Quality Governance Information System
 
 Full-stack web application to manage an ISO 9001 certification project for ESI.
 
-## Stack
+## Technology Stack
 
 - Frontend: React + Vite + Tailwind CSS + Zustand
 - Backend: Node.js + Express + JWT
 - Database: PostgreSQL + Prisma
 
-## Implemented Modules
+## Core Functional Modules
 
 - Authentication and role-based access (`ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`, `CAQ`)
 - Process CRUD with objectives, inputs, outputs, KPI indicators, and knowledge items
@@ -21,7 +21,7 @@ Full-stack web application to manage an ISO 9001 certification project for ESI.
 - Corrective actions management to pilot trajectory corrections
 - Non-conformities register with CAPA linkage and effectiveness verification before closure
 
-## Why This Is An Information System Project
+## Information System Positioning
 
 This platform is implemented as a real Information System (SI), not only a task app, because it integrates:
 
@@ -43,12 +43,12 @@ This platform is implemented as a real Information System (SI), not only a task 
 
 In short, the system supports business processes, decision-making, accountability, and compliance management, which are core characteristics of an Information System project.
 
-## Project Structure
+## Repository Structure
 
 - `backend` Express API + Prisma schema + seed
 - `frontend` React dashboard app
 
-## Integrated Workspace Commands (Recommended)
+## Recommended Workspace Commands
 
 Run from the workspace root (`iso`):
 
@@ -91,7 +91,7 @@ Backend base URL: `http://localhost:5000/api`
 
 Frontend URL: `http://localhost:5173`
 
-## Host Online (Production)
+## Production Deployment
 
 Recommended setup:
 

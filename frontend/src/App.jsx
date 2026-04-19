@@ -14,6 +14,8 @@ const ProjectDetailsPage = lazy(() => import("./pages/projects/ProjectDetailsPag
 const TasksPage = lazy(() => import("./pages/TasksPage"));
 const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const CorrectiveActionsPage = lazy(() => import("./pages/CorrectiveActionsPage"));
+const NonConformitiesPage = lazy(() => import("./pages/NonConformitiesPage"));
 
 function ScreenLoader() {
   return <div className="saas-card p-6 text-sm text-slate-500">Loading workspace...</div>;
@@ -40,6 +42,11 @@ export default function App() {
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+
+            <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER", "CAQ"]} />}>
+              <Route path="/corrective-actions" element={<CorrectiveActionsPage />} />
+              <Route path="/non-conformities" element={<NonConformitiesPage />} />
+            </Route>
           </Route>
         </Route>
 
