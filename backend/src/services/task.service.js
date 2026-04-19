@@ -1,13 +1,29 @@
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/apiError");
 
-const includeShape = {
+const detailIncludeShape = {
   assignee: {
     select: { id: true, fullName: true, email: true, role: true },
   },
-  process: true,
-  project: true,
+  process: {
+    select: { id: true, name: true, responsiblePerson: true },
+  },
+  project: {
+    select: { id: true, name: true, status: true },
+  },
   documents: true,
+};
+
+const listIncludeShape = {
+  assignee: {
+    select: { id: true, fullName: true, email: true, role: true },
+  },
+  process: {
+    select: { id: true, name: true },
+  },
+  project: {
+    select: { id: true, name: true, status: true },
+  },
 };
 
 async function listTasks(filters = {}) {
@@ -18,7 +34,7 @@ async function listTasks(filters = {}) {
 
   return prisma.task.findMany({
     where,
-    include: includeShape,
+    include: listIncludeShape,
     orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
   });
 }
@@ -39,8 +55,18 @@ function assertTeamMemberUpdatePolicy(payload) {
   }
 }
 
+function normalizeResourceFields(payload) {
+  if (Object.prototype.hasOwnProperty.call(payload, "plannedHours") && payload.plannedHours == null) {
+    payload.plannedHours = null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, "actualHours") && payload.actualHours == null) {
+    payload.actualHours = null;
+  }
+}
+
 async function getTaskById(id) {
-  const task = await prisma.task.findUnique({ where: { id }, include: includeShape });
+  const task = await prisma.task.findUnique({ where: { id }, include: detailIncludeShape });
   if (!task) throw new ApiError(404, "Task not found");
   return task;
 }
@@ -63,6 +89,7 @@ async function createTask(data) {
   const payload = { ...data };
   const actor = payload.__user;
   delete payload.__user;
+  normalizeResourceFields(payload);
 
   if (!actor || actor.role !== "PROJECT_MANAGER") {
     throw new ApiError(403, "Only project managers can create tasks");
@@ -73,8 +100,12 @@ async function createTask(data) {
   }
   if (payload.status === "DONE") {
     payload.completedAt = new Date();
+    if (!payload.actualHours && payload.startedAt) {
+      const elapsedMs = Date.now() - new Date(payload.startedAt).getTime();
+      payload.actualHours = Number((elapsedMs / (1000 * 60 * 60)).toFixed(2));
+    }
   }
-  return prisma.task.create({ data: payload, include: includeShape });
+  return prisma.task.create({ data: payload, include: listIncludeShape });
 }
 
 async function updateTask(id, data) {
@@ -82,6 +113,7 @@ async function updateTask(id, data) {
   const user = data.__user;
   const payload = { ...data };
   delete payload.__user;
+  normalizeResourceFields(payload);
 
   if (!user || !["PROJECT_MANAGER", "TEAM_MEMBER"].includes(user.role)) {
     throw new ApiError(403, "Only project managers or assigned team members can update tasks");
@@ -107,6 +139,10 @@ async function updateTask(id, data) {
   if (payload.status === "DONE") {
     payload.completedAt = new Date();
     if (!payload.startedAt) payload.startedAt = new Date();
+    if (!Object.prototype.hasOwnProperty.call(payload, "actualHours") && task.startedAt) {
+      const elapsedMs = Date.now() - new Date(task.startedAt).getTime();
+      payload.actualHours = Number((elapsedMs / (1000 * 60 * 60)).toFixed(2));
+    }
   }
 
   if (payload.status === "TODO") {
@@ -114,7 +150,7 @@ async function updateTask(id, data) {
     payload.completedAt = null;
   }
 
-  return prisma.task.update({ where: { id }, data: payload, include: includeShape });
+  return prisma.task.update({ where: { id }, data: payload, include: listIncludeShape });
 }
 
 async function deleteTask(id) {
@@ -125,7 +161,7 @@ async function deleteTask(id) {
 async function kanban(projectId) {
   const tasks = await prisma.task.findMany({
     where: projectId ? { projectId } : undefined,
-    include: includeShape,
+    include: listIncludeShape,
     orderBy: { createdAt: "desc" },
   });
 
@@ -143,7 +179,7 @@ async function kanbanForUser(user, projectId) {
 
   const tasks = await prisma.task.findMany({
     where,
-    include: includeShape,
+    include: listIncludeShape,
     orderBy: { createdAt: "desc" },
   });
 

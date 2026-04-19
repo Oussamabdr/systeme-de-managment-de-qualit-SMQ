@@ -6,6 +6,8 @@ const taskSchema = z.object({
   description: z.string().optional().nullable(),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).default("TODO"),
   dueDate: z.coerce.date().optional().nullable(),
+  plannedHours: z.coerce.number().nonnegative().optional().nullable(),
+  actualHours: z.coerce.number().nonnegative().optional().nullable(),
   projectId: z.string(),
   processId: z.string(),
   assigneeId: z.string().optional().nullable(),

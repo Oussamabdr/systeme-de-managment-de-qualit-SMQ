@@ -4,8 +4,11 @@ const prisma = require("./config/prisma");
 
 async function startupDbHealthCheck() {
   try {
+    const startedAt = Date.now();
     await prisma.$queryRaw`SELECT 1`;
-    console.log("Database health check passed.");
+    // Warm the Prisma query engine with a model query to avoid first-request latency.
+    await prisma.user.findFirst({ select: { id: true } });
+    console.log(`Database health check passed (${Date.now() - startedAt}ms).`);
   } catch (error) {
     console.error(
       "Database health check failed on startup. API will run, but DB requests may fail. Check DATABASE_URL and local Prisma/Postgres process.",

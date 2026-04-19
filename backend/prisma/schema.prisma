@@ -16,6 +16,7 @@ enum Role {
   ADMIN
   PROJECT_MANAGER
   TEAM_MEMBER
+  CAQ
 }
 
 enum ProjectStatus {
@@ -31,6 +32,44 @@ enum TaskStatus {
   DONE
 }
 
+enum CorrectiveActionStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum CorrectiveActionSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CorrectiveActionSource {
+  OVERDUE_TASK
+  DELAYED_PROJECT
+  KPI_DEVIATION
+  MANUAL
+}
+
+enum CorrectiveActionType {
+  CORRECTIVE
+  PREVENTIVE
+}
+
+enum EffectivenessStatus {
+  PENDING
+  VERIFIED
+  NOT_EFFECTIVE
+}
+
+enum NonConformityStatus {
+  OPEN
+  ANALYSIS
+  CLOSED
+}
+
 model User {
   id           String     @id @default(cuid())
   fullName     String
@@ -39,6 +78,10 @@ model User {
   role         Role       @default(TEAM_MEMBER)
   tasks        Task[]
   documents    Document[]
+  detectedNonConformities NonConformity[]    @relation("NonConformityDetector")
+  verifiedCorrectiveActions CorrectiveAction[] @relation("CorrectiveActionVerifier")
+  ownedCorrectiveActions   CorrectiveAction[] @relation("CorrectiveActionOwner")
+  createdCorrectiveActions CorrectiveAction[] @relation("CorrectiveActionCreator")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -53,6 +96,7 @@ model Project {
   endDate     DateTime?
   processes   ProjectProcess[]
   tasks       Task[]
+  correctiveActions CorrectiveAction[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -61,15 +105,35 @@ model Process {
   id                String           @id @default(cuid())
   name              String
   description       String?
+  objectives        String[]         @default([])
   responsiblePerson String
   inputs            String[]
   outputs           String[]
+  knowledgeItems    String[]         @default([])
   indicators        Json
+  kpis              Kpi[]
+  nonConformities   NonConformity[]
   projects          ProjectProcess[]
   tasks             Task[]
+  correctiveActions CorrectiveAction[]
   documents         Document[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+}
+
+model Kpi {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  target      Float
+  current     Float    @default(0)
+  unit        String?
+  processId   String
+  process     Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([processId])
 }
 
 model ProjectProcess {
@@ -82,22 +146,90 @@ model ProjectProcess {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  status       TaskStatus @default(TODO)
+  dueDate      DateTime?
+  plannedHours Float?
+  actualHours  Float?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  projectId    String
+  processId    String
+  assigneeId   String?
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  process      Process    @relation(fields: [processId], references: [id], onDelete: Cascade)
+  assignee     User?      @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  documents    Document[]
+  correctiveActions CorrectiveAction[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model CorrectiveAction {
+  id            String                 @id @default(cuid())
+  title         String
+  description   String?
+  recommendation String?
+  actionType    CorrectiveActionType @default(CORRECTIVE)
+  status        CorrectiveActionStatus @default(OPEN)
+  severity      CorrectiveActionSeverity @default(MEDIUM)
+  source        CorrectiveActionSource @default(MANUAL)
+  rootCause     String?
+  containmentAction String?
+  effectivenessCriteria String?
+  effectivenessStatus EffectivenessStatus @default(PENDING)
+  verificationComment String?
+  verifiedAt    DateTime?
+  nonConformityId String?
+  isoClause     String?
+  dueDate       DateTime?
+  projectId     String?
+  processId     String?
+  taskId        String?
+  ownerId       String?
+  createdById   String
+  verifiedById  String?
+  nonConformity NonConformity?        @relation(fields: [nonConformityId], references: [id], onDelete: SetNull)
+  project       Project?               @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  process       Process?               @relation(fields: [processId], references: [id], onDelete: SetNull)
+  task          Task?                  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  owner         User?                  @relation("CorrectiveActionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy     User                   @relation("CorrectiveActionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  verifiedBy    User?                  @relation("CorrectiveActionVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([projectId])
+  @@index([processId])
+  @@index([taskId])
+  @@index([ownerId])
+  @@index([nonConformityId])
+  @@index([verifiedById])
+}
+
+model NonConformity {
+  id          String             @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus @default(TODO)
-  dueDate     DateTime?
-  startedAt   DateTime?
-  completedAt DateTime?
-  projectId   String
-  processId   String
-  assigneeId  String?
-  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  process     Process    @relation(fields: [processId], references: [id], onDelete: Cascade)
-  assignee    User?      @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
-  documents   Document[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  status      NonConformityStatus @default(OPEN)
+  severity    CorrectiveActionSeverity @default(MEDIUM)
+  detectedAt  DateTime           @default(now())
+  processId   String?
+  detectedById String
+  process     Process?           @relation(fields: [processId], references: [id], onDelete: SetNull)
+  detectedBy  User               @relation("NonConformityDetector", fields: [detectedById], references: [id], onDelete: Cascade)
+  correctiveActions CorrectiveAction[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([processId])
+  @@index([detectedById])
 }
 
 model Document {

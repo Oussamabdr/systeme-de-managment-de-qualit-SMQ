@@ -10,13 +10,38 @@ Full-stack web application to manage an ISO 9001 certification project for ESI.
 
 ## Implemented Modules
 
-- Authentication and role-based access (`ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`)
-- Process CRUD with inputs, outputs, and KPI indicators
+- Authentication and role-based access (`ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`, `CAQ`)
+- Process CRUD with objectives, inputs, outputs, KPI indicators, and knowledge items
 - Project CRUD with process assignment and status tracking
 - Task CRUD linked to process/project + Kanban status flow
+- Task-level resource monitoring (planned hours vs actual hours)
 - Dashboard analytics (progress, delays, KPI table, charts)
 - Document upload and attachment to process/task
 - Notifications for overdue tasks and delayed projects
+- Corrective actions management to pilot trajectory corrections
+- Non-conformities register with CAPA linkage and effectiveness verification before closure
+
+## Why This Is An Information System Project
+
+This platform is implemented as a real Information System (SI), not only a task app, because it integrates:
+
+- Organizational actors and governance:
+   - Role-based control for `ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`, `CAQ`
+   - Lifecycle constraints for CAPA and non-conformities (who can verify/close)
+- Process modeling and operational workflows:
+   - Process sheets with objectives, inputs, outputs, indicators, and knowledge items
+   - Links between processes, projects, tasks, documents, non-conformities, and corrective actions
+- Data structuring and traceability:
+   - Centralized relational data model (PostgreSQL + Prisma)
+   - End-to-end traceability from issue detection to corrective action closure
+- Decision support and project steering:
+   - Dashboard KPIs, delay detection, critical issues, and prioritized recommended plan (`pilotage`)
+   - Corrective action management to support trajectory correction decisions
+- Quality and compliance logic:
+   - ISO-oriented controls (effectiveness verification required before CAPA closure)
+   - Non-conformity closure rules preserving audit trail and evidence consistency
+
+In short, the system supports business processes, decision-making, accountability, and compliance management, which are core characteristics of an Information System project.
 
 ## Project Structure
 
@@ -201,6 +226,11 @@ This runs `scripts/check-role-controls.mjs`, a non-regression check to ensure ro
 - `GET /api/dashboard/overview` (`ADMIN`, `PROJECT_MANAGER`)
 - `GET /api/dashboard/my-overview`
 
+Decision-oriented outputs included:
+
+- `pilotage.decisionHealth` (score, level, underperforming KPI count)
+- `pilotage.recommendedPlan` (prioritized action guidance for steering)
+
 ### Documents
 
 - `GET /api/documents` (scoped for `TEAM_MEMBER`)
@@ -210,6 +240,32 @@ This runs `scripts/check-role-controls.mjs`, a non-regression check to ensure ro
 ### Notifications
 
 - `GET /api/notifications`
+
+### Corrective Actions
+
+- `GET /api/corrective-actions`
+- `GET /api/corrective-actions/:id`
+- `POST /api/corrective-actions`
+- `PATCH /api/corrective-actions/:id`
+- `DELETE /api/corrective-actions/:id`
+
+ISO closure rule:
+
+- A corrective action cannot be closed (`DONE`) unless root cause, effectiveness criteria, and effectiveness verification are completed by `ADMIN` or `CAQ`.
+- The verifier (`verifiedById`) must be a user with role `ADMIN` or `CAQ`.
+
+### Non-Conformities
+
+- `GET /api/non-conformities`
+- `GET /api/non-conformities/:id`
+- `POST /api/non-conformities`
+- `PATCH /api/non-conformities/:id`
+- `DELETE /api/non-conformities/:id`
+
+ISO non-conformity lifecycle rules:
+
+- A non-conformity can be closed only when all linked CAPA actions are `DONE` and `VERIFIED`.
+- A non-conformity with linked CAPA actions cannot be deleted (traceability preservation).
 
 ## Notes
 

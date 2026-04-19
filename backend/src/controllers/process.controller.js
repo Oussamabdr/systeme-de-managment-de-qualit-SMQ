@@ -5,9 +5,11 @@ const { computeProcessProgress } = require("../services/process-progress.service
 const processSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional().nullable(),
+  objectives: z.array(z.string().min(1)).default([]),
   responsiblePerson: z.string().min(2),
   inputs: z.array(z.string()).default([]),
   outputs: z.array(z.string()).default([]),
+  knowledgeItems: z.array(z.string().min(1)).default([]),
   indicators: z.array(z.object({
     name: z.string(),
     target: z.number().nonnegative(),

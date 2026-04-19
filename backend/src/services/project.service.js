@@ -18,7 +18,31 @@ const includeShape = {
 };
 
 async function listProjects() {
-  const projects = await prisma.project.findMany({ include: includeShape, orderBy: { createdAt: "desc" } });
+  const projects = await prisma.project.findMany({
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      ownerId: true,
+      status: true,
+      startDate: true,
+      endDate: true,
+      createdAt: true,
+      updatedAt: true,
+      processes: {
+        select: {
+          processId: true,
+        },
+      },
+      tasks: {
+        select: {
+          status: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
   return projects.map((project) => {
     const snapshot = computeProgressSnapshot(project);
     return {

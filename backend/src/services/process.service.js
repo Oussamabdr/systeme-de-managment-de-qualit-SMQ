@@ -22,8 +22,26 @@ function includeShape() {
   };
 }
 
+function listIncludeShape() {
+  return {
+    _count: {
+      select: { tasks: true, documents: true },
+    },
+    tasks: {
+      select: {
+        id: true,
+        status: true,
+        dueDate: true,
+      },
+    },
+  };
+}
+
 async function listProcesses() {
-  const processes = await prisma.process.findMany({ include: includeShape(), orderBy: { createdAt: "desc" } });
+  const processes = await prisma.process.findMany({
+    include: listIncludeShape(),
+    orderBy: { createdAt: "desc" },
+  });
   return processes.map((process) => {
     const snapshot = computeProcessProgressSnapshot(process);
     return {

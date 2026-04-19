@@ -9,6 +9,8 @@ const taskRoutes = require("./task.routes");
 const dashboardRoutes = require("./dashboard.routes");
 const documentRoutes = require("./document.routes");
 const notificationRoutes = require("./notification.routes");
+const correctiveActionRoutes = require("./corrective-action.routes");
+const nonConformityRoutes = require("./non-conformity.routes");
 
 const router = express.Router();
 
@@ -36,5 +38,7 @@ router.use("/tasks", taskRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/documents", documentRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/corrective-actions", correctiveActionRoutes);
+router.use("/non-conformities", nonConformityRoutes);
 
 module.exports = router;
