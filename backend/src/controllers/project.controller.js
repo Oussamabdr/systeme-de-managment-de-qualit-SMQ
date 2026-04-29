@@ -1,17 +1,10 @@
-const { z } = require("zod");
 const projectService = require("../services/project.service");
 const { computeProjectProgress } = require("../services/project-progress.service");
+const { validationSchemas } = require("../utils/validation");
 
-const projectSchema = z.object({
-  name: z.string().min(2),
-  description: z.string().optional().nullable(),
-  ownerId: z.string().optional().nullable(),
-  startDate: z.coerce.date().optional().nullable(),
-  endDate: z.coerce.date().optional().nullable(),
-});
-
-const assignSchema = z.object({
-  processIds: z.array(z.string()).default([]),
+const projectSchema = validationSchemas.project;
+const assignSchema = validationSchemas.assignProcess || require("zod").z.object({
+  processIds: require("zod").z.array(require("zod").z.string()).default([]),
 });
 
 async function listProjects(_req, res, next) {

@@ -1,14 +1,8 @@
-const { z } = require("zod");
 const nonConformityService = require("../services/non-conformity.service");
+const { validationSchemas } = require("../utils/validation");
+const { z } = require("zod");
 
-const nonConformitySchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional().nullable(),
-  status: z.enum(["OPEN", "ANALYSIS", "CLOSED"]).default("OPEN"),
-  severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
-  detectedAt: z.coerce.date().optional(),
-  processId: z.string().optional().nullable(),
-});
+const nonConformitySchema = validationSchemas.nonConformity;
 
 const listSchema = z.object({
   status: z.enum(["OPEN", "ANALYSIS", "CLOSED"]).optional(),

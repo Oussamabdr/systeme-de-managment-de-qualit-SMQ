@@ -1,29 +1,8 @@
-const { z } = require("zod");
 const correctiveActionService = require("../services/corrective-action.service");
+const { validationSchemas } = require("../utils/validation");
+const { z } = require("zod");
 
-const actionSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional().nullable(),
-  recommendation: z.string().optional().nullable(),
-  actionType: z.enum(["CORRECTIVE", "PREVENTIVE"]).default("CORRECTIVE"),
-  status: z.enum(["OPEN", "IN_PROGRESS", "DONE", "CANCELLED"]).default("OPEN"),
-  severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
-  source: z.enum(["OVERDUE_TASK", "DELAYED_PROJECT", "KPI_DEVIATION", "MANUAL"]).default("MANUAL"),
-  rootCause: z.string().optional().nullable(),
-  containmentAction: z.string().optional().nullable(),
-  effectivenessCriteria: z.string().optional().nullable(),
-  effectivenessStatus: z.enum(["PENDING", "VERIFIED", "NOT_EFFECTIVE"]).default("PENDING"),
-  verificationComment: z.string().optional().nullable(),
-  verifiedAt: z.coerce.date().optional().nullable(),
-  verifiedById: z.string().optional().nullable(),
-  nonConformityId: z.string().optional().nullable(),
-  isoClause: z.string().optional().nullable(),
-  dueDate: z.coerce.date().optional().nullable(),
-  projectId: z.string().optional().nullable(),
-  processId: z.string().optional().nullable(),
-  taskId: z.string().optional().nullable(),
-  ownerId: z.string().optional().nullable(),
-});
+const actionSchema = validationSchemas.correctiveAction;
 
 const listSchema = z.object({
   status: z.enum(["OPEN", "IN_PROGRESS", "DONE", "CANCELLED"]).optional(),

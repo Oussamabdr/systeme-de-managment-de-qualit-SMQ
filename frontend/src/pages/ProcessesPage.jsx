@@ -9,6 +9,8 @@ import Button from "../components/ui/Button";
 import { Table } from "../components/ui/Table";
 import ProjectProgress from "../components/projects/ProjectProgress";
 import StatusBadge from "../components/ui/StatusBadge";
+import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { FormField, FormErrors, SuccessMessage } from "../components/form/FormField";
 
 const initialForm = {
   name: "",
@@ -46,7 +48,8 @@ export default function ProcessesPage() {
   const [processes, setProcesses] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState(initialForm);
-  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, handleApiError, clearErrors, hasErrors } = useFormValidation();
 
   const loadProcesses = async () => {
     try {
@@ -54,7 +57,7 @@ export default function ProcessesPage() {
       setProcesses(processRes.data.data);
       setTasks(tasksRes.data.data || []);
     } catch (err) {
-      setError(getErrorMessage(err));
+      handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
     }
   };
 
@@ -69,7 +72,8 @@ export default function ProcessesPage() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    setError("");
+    clearErrors();
+    setSuccessMessage("");
 
     try {
       const payload = {
@@ -81,15 +85,22 @@ export default function ProcessesPage() {
         indicators: parseIndicatorsInput(form.indicators),
       };
 
+      setIsSubmitting(true);
       await api.post("/processes", payload);
       setForm(initialForm);
+      setSuccessMessage("Processus créé avec succès!");
+      setTimeout(() => setSuccessMessage(""), 3000);
       loadProcesses();
     } catch (err) {
-      if (err instanceof SyntaxError) {
-        setError("Indicators format is invalid. Use JSON array or plain list like: closure rate, on-time delivery");
+      if (err.response?.data?.fieldErrors) {
+        handleApiError(err.response.data);
+      } else if (err instanceof SyntaxError) {
+        handleApiError({ message: "Format des indicateurs invalide. Utilisez json ou une liste simple (taux de clôture, livraison à temps)", fieldErrors: { indicators: "Format invalide" } });
       } else {
-        setError(getErrorMessage(err));
+        handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -133,7 +144,6 @@ export default function ProcessesPage() {
           <div className="px-5 pt-5">
             <CardHeader title="Process Library" subtitle="Owner, workload and drill-down access." />
           </div>
-          {error ? <p className="px-5 pb-4 text-sm text-rose-700">{error}</p> : null}
           <Table headers={["Name", "Responsible", "Tasks", "Progress", "Status", "Related Tasks", "Action"]}>
             {processes.map((process) => (
               <tr key={process.id}>
@@ -203,32 +213,89 @@ export default function ProcessesPage() {
             Indicators accept JSON array or plain list (comma, semicolon, or line-separated).
           </p>
           <form className="mt-3 space-y-3" onSubmit={onSubmit}>
-            <div className="field-group">
-              <label className="field-label">Process Name</label>
-              <Input placeholder="e.g. Procurement Control" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Responsible Person</label>
-              <Input placeholder="e.g. Quality Manager" value={form.responsiblePerson} onChange={(e) => setForm((p) => ({ ...p, responsiblePerson: e.target.value }))} required />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Description</label>
-              <TextArea placeholder="Describe scope, controls, and expected outcomes." value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3} />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Inputs</label>
-              <Input placeholder="e.g. Request, Specification, Budget" value={form.inputs} onChange={(e) => setForm((p) => ({ ...p, inputs: e.target.value }))} />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Outputs</label>
-              <Input placeholder="e.g. Approved order, Delivery, Acceptance report" value={form.outputs} onChange={(e) => setForm((p) => ({ ...p, outputs: e.target.value }))} />
-            </div>
-            <div className="field-group">
-              <label className="field-label">KPI Indicators (JSON)</label>
-              <TextArea placeholder="e.g. Closure rate, On-time delivery" value={form.indicators} onChange={(e) => setForm((p) => ({ ...p, indicators: e.target.value }))} rows={4} />
-              <p className="field-help">If you type plain KPI names, defaults are auto-created (target 100, current 0).</p>
-            </div>
-            <Button className="w-full">Save Process</Button>
+            <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
+            <FormErrors errors={errors} />
+
+            <FormField
+              label="Process Name"
+              name="name"
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              onBlur={() => markFieldTouched("name")}
+              error={errors.name}
+              touched={touched.name}
+              placeholder="e.g. Procurement Control"
+              helpText="Name must be at least 2 characters"
+              required
+            />
+
+            <FormField
+              label="Responsible Person"
+              name="responsiblePerson"
+              type="text"
+              value={form.responsiblePerson}
+              onChange={(e) => setForm((p) => ({ ...p, responsiblePerson: e.target.value }))}
+              onBlur={() => markFieldTouched("responsiblePerson")}
+              error={errors.responsiblePerson}
+              touched={touched.responsiblePerson}
+              placeholder="e.g. Quality Manager"
+              required
+            />
+
+            <FormField
+              label="Description"
+              name="description"
+              type="textarea"
+              value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              onBlur={() => markFieldTouched("description")}
+              error={errors.description}
+              touched={touched.description}
+              placeholder="Describe scope, controls, and expected outcomes."
+              helpText="Max 500 characters"
+            />
+
+            <FormField
+              label="Inputs"
+              name="inputs"
+              type="text"
+              value={form.inputs}
+              onChange={(e) => setForm((p) => ({ ...p, inputs: e.target.value }))}
+              onBlur={() => markFieldTouched("inputs")}
+              error={errors.inputs}
+              touched={touched.inputs}
+              placeholder="e.g. Request, Specification, Budget"
+            />
+
+            <FormField
+              label="Outputs"
+              name="outputs"
+              type="text"
+              value={form.outputs}
+              onChange={(e) => setForm((p) => ({ ...p, outputs: e.target.value }))}
+              onBlur={() => markFieldTouched("outputs")}
+              error={errors.outputs}
+              touched={touched.outputs}
+              placeholder="e.g. Approved order, Delivery, Acceptance report"
+            />
+
+            <FormField
+              label="KPI Indicators"
+              name="indicators"
+              type="textarea"
+              value={form.indicators}
+              onChange={(e) => setForm((p) => ({ ...p, indicators: e.target.value }))}
+              onBlur={() => markFieldTouched("indicators")}
+              error={errors.indicators}
+              touched={touched.indicators}
+              placeholder="e.g. Closure rate, On-time delivery"
+              helpText="If you type plain KPI names, defaults are auto-created (target 100, current 0)."
+            />
+
+            <Button className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Process"}
+            </Button>
           </form>
         </Card>
       </div>

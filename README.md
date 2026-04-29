@@ -26,20 +26,20 @@ Full-stack web application to manage an ISO 9001 certification project for ESI.
 This platform is implemented as a real Information System (SI), not only a task app, because it integrates:
 
 - Organizational actors and governance:
-   - Role-based control for `ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`, `CAQ`
-   - Lifecycle constraints for CAPA and non-conformities (who can verify/close)
+  - Role-based control for `ADMIN`, `PROJECT_MANAGER`, `TEAM_MEMBER`, `CAQ`
+  - Lifecycle constraints for CAPA and non-conformities (who can verify/close)
 - Process modeling and operational workflows:
-   - Process sheets with objectives, inputs, outputs, indicators, and knowledge items
-   - Links between processes, projects, tasks, documents, non-conformities, and corrective actions
+  - Process sheets with objectives, inputs, outputs, indicators, and knowledge items
+  - Links between processes, projects, tasks, documents, non-conformities, and corrective actions
 - Data structuring and traceability:
-   - Centralized relational data model (PostgreSQL + Prisma)
-   - End-to-end traceability from issue detection to corrective action closure
+  - Centralized relational data model (PostgreSQL + Prisma)
+  - End-to-end traceability from issue detection to corrective action closure
 - Decision support and project steering:
-   - Dashboard KPIs, delay detection, critical issues, and prioritized recommended plan (`pilotage`)
-   - Corrective action management to support trajectory correction decisions
+  - Dashboard KPIs, delay detection, critical issues, and prioritized recommended plan (`pilotage`)
+  - Corrective action management to support trajectory correction decisions
 - Quality and compliance logic:
-   - ISO-oriented controls (effectiveness verification required before CAPA closure)
-   - Non-conformity closure rules preserving audit trail and evidence consistency
+  - ISO-oriented controls (effectiveness verification required before CAPA closure)
+  - Non-conformity closure rules preserving audit trail and evidence consistency
 
 In short, the system supports business processes, decision-making, accountability, and compliance management, which are core characteristics of an Information System project.
 
@@ -145,6 +145,39 @@ The frontend includes SPA rewrite config at `frontend/vercel.json`.
 - `admin@esi.edu` / `Password123!` (`ADMIN`)
 - `manager@esi.edu` / `Password123!` (`PROJECT_MANAGER`)
 - `member@esi.edu` / `Password123!` (`TEAM_MEMBER`)
+- `caq@esi.edu` / `Password123!` (`CAQ`)
+
+## Demo Non-Conformity & CAPA Data
+
+After running `npm run seed`, you will get ready-to-test samples:
+
+- Non-Conformities:
+  - `Missing calibration evidence for measurement device` (`ANALYSIS`, `HIGH`)
+  - `Delayed closure of previous audit findings` (`OPEN`, `MEDIUM`)
+- Corrective/Preventive Actions:
+  - `Recalibrate affected devices and update registry` (`IN_PROGRESS`, linked to NC)
+  - `Introduce monthly NC closure review meeting` (`DONE` + `VERIFIED`, verified by `CAQ`)
+
+## Demo Project, Process & Task Cases
+
+After running `npm run seed`, additional scenarios are created for realistic testing:
+
+- Projects with mixed lifecycle states:
+  - `ISO 9001 Certification - ESI` (`IN_PROGRESS`)
+  - `Supplier Quality Recovery Program` (`DELAYED`)
+  - `Document Control Digitalization` (`COMPLETED`)
+  - `Risk and Opportunity Program 2027` (`PLANNED`)
+- Processes covering different domains:
+  - `Academic Program Management`
+  - `Internal Audit Management`
+  - `Supplier Evaluation`
+  - `Document Control`
+  - `Risk and Opportunity Management`
+- Tasks with different operational cases:
+  - Overdue `TODO` tasks (delay case)
+  - `IN_PROGRESS` tasks with `actualHours > plannedHours` (overload case)
+  - `DONE` tasks with `completedAt` and effort tracking
+  - Future planning tasks on planned projects
 
 ## Permission Matrix (Actors)
 
