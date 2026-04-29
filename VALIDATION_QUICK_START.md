@@ -49,7 +49,7 @@ try {
 import { useFormValidation } from "../hooks/useFormValidation";
 
 function MyPage() {
-  const { 
+  const {
     errors,                // { fieldName: "error message" }
     touched,               // { fieldName: true } - tracks user interaction
     markFieldTouched,      // () => trigger validation display
@@ -69,7 +69,7 @@ At the top of your form:
 <form onSubmit={onSubmit} className="space-y-3">
   {/* Show all validation errors as a summary */}
   <FormErrors errors={errors} />
-  
+
   {/* Show success message after submission */}
   <SuccessMessage message={successMessage} />
 
@@ -82,23 +82,25 @@ At the top of your form:
 Replace existing Input components:
 
 **Before**:
+
 ```jsx
-<input 
+<input
   type="text"
   value={form.name}
-  onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
   placeholder="Enter name"
 />
 ```
 
 **After**:
+
 ```jsx
 <FormField
   label="Process Name"
   name="name"
   type="text"
   value={form.name}
-  onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
   onBlur={() => markFieldTouched("name")}
   error={errors.name}
   touched={touched.name}
@@ -109,6 +111,7 @@ Replace existing Input components:
 ```
 
 **FormField Props**:
+
 ```javascript
 {
   label: string,              // Field label
@@ -133,7 +136,7 @@ Replace existing Input components:
 ```javascript
 const onSubmit = async (event) => {
   event.preventDefault();
-  clearErrors();               // Clear previous errors
+  clearErrors(); // Clear previous errors
   setSuccessMessage("");
 
   try {
@@ -144,13 +147,12 @@ const onSubmit = async (event) => {
     });
 
     // Success!
-    setForm(initialState);     // Reset form
+    setForm(initialState); // Reset form
     setSuccessMessage("Créé avec succès!");
     setTimeout(() => setSuccessMessage(""), 3000);
-    
+
     // Optional: reload data
     loadData();
-
   } catch (error) {
     // Backend validation errors
     if (error.response?.data?.fieldErrors) {
@@ -159,7 +161,7 @@ const onSubmit = async (event) => {
       // Generic error
       handleApiError({
         message: "Une erreur est survenue",
-        fieldErrors: {}
+        fieldErrors: {},
       });
     }
   }
@@ -171,6 +173,7 @@ const onSubmit = async (event) => {
 Let's update **ProjectsPage** as an example:
 
 ### Current Code
+
 ```javascript
 function ProjectsPage() {
   const [form, setForm] = useState({ name: "", description: "" });
@@ -198,14 +201,25 @@ function ProjectsPage() {
 ```
 
 ### Updated Code
+
 ```javascript
 import { useFormValidation } from "../hooks/useFormValidation";
-import { FormField, FormErrors, SuccessMessage } from "../components/form/FormField";
+import {
+  FormField,
+  FormErrors,
+  SuccessMessage,
+} from "../components/form/FormField";
 
 function ProjectsPage() {
-  const [form, setForm] = useState({ name: "", description: "", startDate: "", endDate: "" });
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+  });
   const [successMessage, setSuccessMessage] = useState("");
-  const { errors, touched, markFieldTouched, handleApiError, clearErrors } = useFormValidation();
+  const { errors, touched, markFieldTouched, handleApiError, clearErrors } =
+    useFormValidation();
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -233,7 +247,7 @@ function ProjectsPage() {
         label="Project Name"
         name="name"
         value={form.name}
-        onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
         onBlur={() => markFieldTouched("name")}
         error={errors.name}
         touched={touched.name}
@@ -245,7 +259,9 @@ function ProjectsPage() {
         name="description"
         type="textarea"
         value={form.description}
-        onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
+        onChange={(e) =>
+          setForm((p) => ({ ...p, description: e.target.value }))
+        }
         onBlur={() => markFieldTouched("description")}
         error={errors.description}
         touched={touched.description}
@@ -256,7 +272,7 @@ function ProjectsPage() {
         name="startDate"
         type="date"
         value={form.startDate}
-        onChange={(e) => setForm(p => ({ ...p, startDate: e.target.value }))}
+        onChange={(e) => setForm((p) => ({ ...p, startDate: e.target.value }))}
         onBlur={() => markFieldTouched("startDate")}
         error={errors.startDate}
         touched={touched.startDate}
@@ -267,7 +283,7 @@ function ProjectsPage() {
         name="endDate"
         type="date"
         value={form.endDate}
-        onChange={(e) => setForm(p => ({ ...p, endDate: e.target.value }))}
+        onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
         onBlur={() => markFieldTouched("endDate")}
         error={errors.endDate}
         touched={touched.endDate}
@@ -306,6 +322,7 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ## Validation Rules by Entity
 
 ### Process
+
 - **name**: 2-100 chars, required
 - **responsiblePerson**: 2+ chars, required
 - **description**: optional, max 500 chars
@@ -313,12 +330,14 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 - **indicators**: objects with name, target (>=0), current (>=0)
 
 ### Project
+
 - **name**: 2-150 chars, required
 - **description**: optional, max 500 chars
 - **startDate**: valid date, optional
 - **endDate**: must be >= startDate
 
 ### Task
+
 - **title**: 3-200 chars, required
 - **description**: optional, max 1000 chars
 - **status**: TODO, IN_PROGRESS, or DONE
@@ -329,12 +348,14 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 - **processId**: required
 
 ### Non-Conformity
+
 - **title**: 5-200 chars, required
 - **description**: optional, 10-1000 chars
 - **status**: OPEN, ANALYSIS, or CLOSED
 - **severity**: LOW, MEDIUM, HIGH, or CRITICAL
 
 ### Corrective Action
+
 - **title**: 5-200 chars, required
 - **description**: optional, max 1000 chars
 - **rootCause**: optional, 5-500 chars
@@ -345,13 +366,14 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ## Common Patterns
 
 ### Optional Field with Validation
+
 ```jsx
 <FormField
   label="Email (optional)"
   name="email"
   type="email"
   value={form.email}
-  onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
   onBlur={() => markFieldTouched("email")}
   error={errors.email}
   touched={touched.email}
@@ -360,13 +382,14 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ```
 
 ### Field with Custom Help Text
+
 ```jsx
 <FormField
   label="KPI Target"
   name="target"
   type="number"
   value={form.target}
-  onChange={(e) => setForm(p => ({ ...p, target: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, target: e.target.value }))}
   onBlur={() => markFieldTouched("target")}
   error={errors.target}
   touched={touched.target}
@@ -376,6 +399,7 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ```
 
 ### Disabled Field
+
 ```jsx
 <FormField
   label="Approved By"
@@ -390,6 +414,7 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ## Testing Your Implementation
 
 ### Manual Test
+
 1. Open form page
 2. Try to submit without filling required fields → See "Ce champ est obligatoire"
 3. Enter invalid data (e.g., 1 char for name) → See specific error
@@ -397,6 +422,7 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 5. Try date validation (end before start) → See relationship error
 
 ### Browser Console Check
+
 ```javascript
 // In React DevTools, check hook state:
 // errors = { fieldName: "error message" or undefined }
@@ -406,6 +432,7 @@ The `handleApiError()` function automatically maps these to the form's `errors` 
 ## Questions?
 
 Refer to:
+
 - `VALIDATION_GUIDE.md` - Complete validation reference
 - `frontend/src/hooks/useFormValidation.js` - Hook implementation
 - `frontend/src/components/form/FormField.jsx` - Component props

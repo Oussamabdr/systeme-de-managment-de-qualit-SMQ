@@ -5,7 +5,9 @@ import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { Input, Select, TextArea } from "../components/ui/Input";
+import { Select } from "../components/ui/Input";
+import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 
 const initialForm = {
   title: "",
@@ -19,8 +21,9 @@ export default function NonConformitiesPage() {
   const [processes, setProcesses] = useState([]);
   const [filters, setFilters] = useState({ status: "", severity: "" });
   const [form, setForm] = useState(initialForm);
-  const [submitting, setSubmitting] = useState(false);
   const [updatingId, setUpdatingId] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -56,9 +59,36 @@ export default function NonConformitiesPage() {
 
   async function handleCreate(event) {
     event.preventDefault();
-    setSubmitting(true);
+    clearErrors();
+    setSuccessMessage("");
+    markFieldTouched("title");
+    markFieldTouched("description");
+    markFieldTouched("severity");
+
+    const titleError = validateField(
+      "title",
+      form.title,
+      fieldValidationRules.combine(
+        fieldValidationRules.required,
+        fieldValidationRules.minLength(5),
+        fieldValidationRules.maxLength(200),
+      ),
+    );
+    const descriptionError = validateField(
+      "description",
+      form.description,
+      fieldValidationRules.combine(
+        fieldValidationRules.minLength(10),
+        fieldValidationRules.maxLength(1000),
+      ),
+    );
+
+    if (titleError || descriptionError) {
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       await api.post("/non-conformities", {
         title: form.title,
         description: form.description || null,
@@ -66,11 +96,17 @@ export default function NonConformitiesPage() {
         processId: form.processId || null,
       });
       setForm(initialForm);
+      setSuccessMessage("Non-conformite creee avec succes !");
+      setTimeout(() => setSuccessMessage(""), 3000);
       await loadData();
     } catch (error) {
-      setState((prev) => ({ ...prev, error: getErrorMessage(error) }));
+      if (error.response?.data?.fieldErrors) {
+        handleApiError(error.response.data);
+      } else {
+        handleApiError({ message: getErrorMessage(error), fieldErrors: {} });
+      }
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -201,45 +237,71 @@ export default function NonConformitiesPage() {
         <Card className="p-5">
           <CardHeader title="Declare Non-Conformity" subtitle="Capture deviation evidence to trigger controlled corrective actions." />
           <form className="space-y-2" onSubmit={handleCreate}>
-            <div className="field-group">
-              <label className="field-label">Non-Conformity Title</label>
-              <Input
-                required
-                value={form.title}
-                placeholder="e.g. Calibration record missing for lab equipment"
-                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Description and Evidence</label>
-              <TextArea
-                value={form.description}
-                rows={4}
-                placeholder="Describe what happened, where it was detected, and available evidence."
-                onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Severity</label>
-              <Select value={form.severity} onChange={(event) => setForm((prev) => ({ ...prev, severity: event.target.value }))}>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Related Process</label>
-              <Select value={form.processId} onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))}>
-                <option value="">Select process (optional)</option>
-                {processes.map((process) => (
-                  <option key={process.id} value={process.id}>{process.name}</option>
-                ))}
-              </Select>
-            </div>
+            <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
+            <FormErrors errors={errors} />
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Saving..." : "Create Non-Conformity"}
+            <FormField
+              label="Non-Conformity Title"
+              name="title"
+              type="text"
+              value={form.title}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              onBlur={() => markFieldTouched("title")}
+              error={errors.title}
+              touched={touched.title}
+              placeholder="e.g. Calibration record missing for lab equipment"
+              helpText="Minimum 5 characters"
+              required
+            />
+
+            <FormField
+              label="Description and Evidence"
+              name="description"
+              type="textarea"
+              value={form.description}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              onBlur={() => markFieldTouched("description")}
+              error={errors.description}
+              touched={touched.description}
+              placeholder="Describe what happened, where it was detected, and available evidence."
+              helpText="Min 10 characters if provided, max 1000"
+            />
+
+            <FormField
+              label="Severity"
+              name="severity"
+              type="select"
+              value={form.severity}
+              onChange={(event) => setForm((prev) => ({ ...prev, severity: event.target.value }))}
+              onBlur={() => markFieldTouched("severity")}
+              error={errors.severity}
+              touched={touched.severity}
+            >
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </FormField>
+
+            <FormField
+              label="Related Process"
+              name="processId"
+              type="select"
+              value={form.processId}
+              onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))}
+              onBlur={() => markFieldTouched("processId")}
+              error={errors.processId}
+              touched={touched.processId}
+              helpText="Optional link"
+            >
+              <option value="">Select process (optional)</option>
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>{process.name}</option>
+              ))}
+            </FormField>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create Non-Conformity"}
             </Button>
           </form>
         </Card>

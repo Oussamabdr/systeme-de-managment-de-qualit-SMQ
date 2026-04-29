@@ -19,6 +19,7 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 #### Key Validation Rules
 
 ##### Process Validation
+
 ```javascript
 // Name: 2-100 characters
 // Description: Optional, max 500 chars
@@ -28,11 +29,15 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 ```
 
 **Example valid payload**:
+
 ```json
 {
   "name": "Quality Audit Process",
   "responsiblePerson": "CAQ Manager",
-  "objectives": ["Verify compliance with ISO standards", "Identify improvement opportunities"],
+  "objectives": [
+    "Verify compliance with ISO standards",
+    "Identify improvement opportunities"
+  ],
   "indicators": [
     { "name": "Audit Coverage %", "target": 100, "current": 85 },
     { "name": "Finding Closure Rate", "target": 95, "current": 88 }
@@ -41,6 +46,7 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 ```
 
 ##### Project Validation
+
 ```javascript
 // Name: 2-150 characters
 // Description: Optional, max 500 chars
@@ -48,6 +54,7 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 ```
 
 ##### Task Validation
+
 ```javascript
 // Title: 3-200 characters
 // Status: One of TODO, IN_PROGRESS, DONE
@@ -58,6 +65,7 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 ```
 
 ##### Non-Conformity Validation
+
 ```javascript
 // Title: 5-200 characters
 // Description: Optional, 10-1000 chars if provided
@@ -66,6 +74,7 @@ The backend uses **Zod** schemas to validate all input data before persistence:
 ```
 
 ##### Corrective Action Validation
+
 ```javascript
 // Title: 5-200 characters
 // Root Cause: Optional, 5-500 chars if provided
@@ -115,10 +124,14 @@ Custom React hook providing:
 #### useFormValidation Hook
 
 ```javascript
-import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import {
+  useFormValidation,
+  fieldValidationRules,
+} from "../hooks/useFormValidation";
 
 function MyForm() {
-  const { errors, touched, markFieldTouched, handleApiError, clearErrors } = useFormValidation();
+  const { errors, touched, markFieldTouched, handleApiError, clearErrors } =
+    useFormValidation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,7 +145,7 @@ function MyForm() {
   return (
     <input
       name="name"
-      onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
       onBlur={() => markFieldTouched("name")}
       className={errors.name && touched.name ? "border-red-500" : ""}
     />
@@ -144,22 +157,22 @@ function MyForm() {
 
 ```javascript
 // Single value validators
-fieldValidationRules.required(value)           // "Ce champ est obligatoire"
-fieldValidationRules.minLength(5)(value)       // "Doit contenir au moins 5 caractères"
-fieldValidationRules.maxLength(100)(value)     // "Ne doit pas dépasser 100 caractères"
-fieldValidationRules.email(value)              // Email format check
-fieldValidationRules.url(value)                // URL format check
-fieldValidationRules.number(value)             // Numeric check
-fieldValidationRules.positive(value)           // >= 0
-fieldValidationRules.date(value)               // Valid date
-fieldValidationRules.futureDate(value)         // Future date only
-fieldValidationRules.password(value)           // 8+ chars, uppercase, digit, special char
+fieldValidationRules.required(value); // "Ce champ est obligatoire"
+fieldValidationRules.minLength(5)(value); // "Doit contenir au moins 5 caractères"
+fieldValidationRules.maxLength(100)(value); // "Ne doit pas dépasser 100 caractères"
+fieldValidationRules.email(value); // Email format check
+fieldValidationRules.url(value); // URL format check
+fieldValidationRules.number(value); // Numeric check
+fieldValidationRules.positive(value); // >= 0
+fieldValidationRules.date(value); // Valid date
+fieldValidationRules.futureDate(value); // Future date only
+fieldValidationRules.password(value); // 8+ chars, uppercase, digit, special char
 
 // Combine multiple rules
 const rule = fieldValidationRules.combine(
   fieldValidationRules.required,
   fieldValidationRules.minLength(3),
-  fieldValidationRules.maxLength(100)
+  fieldValidationRules.maxLength(100),
 );
 ```
 
@@ -170,6 +183,7 @@ const rule = fieldValidationRules.combine(
 Pre-built UI components that handle validation display:
 
 #### FormField Component
+
 ```javascript
 import { FormField } from "../components/form/FormField";
 
@@ -177,17 +191,18 @@ import { FormField } from "../components/form/FormField";
   label="Process Name"
   name="name"
   value={form.name}
-  onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
   onBlur={() => markFieldTouched("name")}
   error={errors.name}
   touched={touched.name}
   placeholder="e.g. Quality Control"
   helpText="Name must be 2-100 characters"
   required
-/>
+/>;
 ```
 
 **Features**:
+
 - Auto-renders error with icon when `touched=true`
 - Supports text, textarea, select inputs
 - Red border on error state
@@ -195,15 +210,17 @@ import { FormField } from "../components/form/FormField";
 - Disabled state support
 
 #### FormErrors Component
+
 Display all form errors in a summary box:
 
 ```javascript
 import { FormErrors } from "../components/form/FormField";
 
-<FormErrors errors={errors} />
+<FormErrors errors={errors} />;
 ```
 
 Output:
+
 ```
 ⚠ Veuillez corriger les 2 erreur(s)
 - name: Le nom doit contenir au moins 2 caractères
@@ -211,15 +228,16 @@ Output:
 ```
 
 #### SuccessMessage Component
+
 Show temporary success feedback:
 
 ```javascript
 import { SuccessMessage } from "../components/form/FormField";
 
-<SuccessMessage 
-  message="Processus créé avec succès!" 
+<SuccessMessage
+  message="Processus créé avec succès!"
   onDismiss={() => setSuccessMessage("")}
-/>
+/>;
 ```
 
 ## Implementation Examples
@@ -228,17 +246,22 @@ import { SuccessMessage } from "../components/form/FormField";
 
 ```javascript
 import { useFormValidation } from "../hooks/useFormValidation";
-import { FormField, FormErrors, SuccessMessage } from "../components/form/FormField";
+import {
+  FormField,
+  FormErrors,
+  SuccessMessage,
+} from "../components/form/FormField";
 
 export default function ProcessesPage() {
   const [form, setForm] = useState(initialForm);
   const [successMessage, setSuccessMessage] = useState("");
-  const { errors, touched, markFieldTouched, handleApiError, clearErrors } = useFormValidation();
+  const { errors, touched, markFieldTouched, handleApiError, clearErrors } =
+    useFormValidation();
 
   const onSubmit = async (event) => {
     event.preventDefault();
     clearErrors();
-    
+
     try {
       const response = await api.post("/processes", form);
       setForm(initialForm);
@@ -255,18 +278,18 @@ export default function ProcessesPage() {
     <form onSubmit={onSubmit} className="space-y-3">
       <SuccessMessage message={successMessage} />
       <FormErrors errors={errors} />
-      
+
       <FormField
         label="Process Name"
         name="name"
         value={form.name}
-        onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
         onBlur={() => markFieldTouched("name")}
         error={errors.name}
         touched={touched.name}
         required
       />
-      
+
       <button type="submit">Save</button>
     </form>
   );
@@ -287,7 +310,7 @@ const validateTaskTitle = (value) => {
   label="Task Title"
   name="title"
   value={form.title}
-  onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
+  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
   onBlur={() => {
     markFieldTouched("title");
     const error = validateTaskTitle(form.title);
@@ -295,7 +318,7 @@ const validateTaskTitle = (value) => {
   }}
   error={errors.title}
   touched={touched.title}
-/>
+/>;
 ```
 
 ## Testing Validation
@@ -303,6 +326,7 @@ const validateTaskTitle = (value) => {
 ### Unit Testing (Backend)
 
 Test schema validation:
+
 ```javascript
 const { validationSchemas } = require("../utils/validation");
 
@@ -344,18 +368,21 @@ curl -X POST http://localhost:5000/api/processes \
 ## Best Practices
 
 ### Backend
+
 ✅ Always validate in controllers before calling services
 ✅ Use Zod schemas for consistent validation rules
 ✅ Return field-level errors, not generic messages
 ✅ Log validation failures for audit trail
 
 ### Frontend
+
 ✅ Show errors only after user interacts with field (use `touched` state)
 ✅ Provide helpful error messages in user's language (français)
 ✅ Disable submit button while validation errors exist
 ✅ Show success message on successful submission
 
 ### Data Quality
+
 ✅ Enforce length limits (names 2-150 chars, descriptions max 500)
 ✅ Validate date relationships (endDate >= startDate)
 ✅ Require critical fields (name, responsible, project, process)

@@ -4,12 +4,14 @@ import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
-import { Input, Select, TextArea } from "../components/ui/Input";
+import { Input, Select } from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import { Table } from "../components/ui/Table";
 import { useAuthStore } from "../store/authStore";
 import ProjectProgress from "../components/projects/ProjectProgress";
+import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 
 const initialForm = {
   name: "",
@@ -29,6 +31,8 @@ export default function ProjectsPage() {
   const [editingProjectId, setEditingProjectId] = useState("");
   const [editForm, setEditForm] = useState(initialForm);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
 
   const load = async () => {
     try {
@@ -47,12 +51,46 @@ export default function ProjectsPage() {
 
   const createProject = async (event) => {
     event.preventDefault();
+
+    clearErrors();
+    setSuccessMessage("");
+    markFieldTouched("name");
+    markFieldTouched("description");
+
+    const nameError = validateField(
+      "name",
+      form.name,
+      fieldValidationRules.combine(
+        fieldValidationRules.required,
+        fieldValidationRules.minLength(2),
+        fieldValidationRules.maxLength(150),
+      ),
+    );
+    const descriptionError = validateField(
+      "description",
+      form.description,
+      fieldValidationRules.maxLength(500),
+    );
+
+    if (nameError || descriptionError) {
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       await api.post("/projects", form);
       setForm(initialForm);
+      setSuccessMessage("Projet cree avec succes !");
+      setTimeout(() => setSuccessMessage(""), 3000);
       load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      if (err.response?.data?.fieldErrors) {
+        handleApiError(err.response.data);
+      } else {
+        handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -213,16 +251,39 @@ export default function ProjectsPage() {
                 </Button>
               </div>
               <form className="mt-3 space-y-3" onSubmit={createProject}>
-                <div className="field-group">
-                  <label className="field-label">Project Name</label>
-                  <Input placeholder="e.g. Internal Audit Readiness 2026" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
-                </div>
-                <div className="field-group">
-                  <label className="field-label">Description</label>
-                  <TextArea placeholder="State objective, scope, and expected quality outcomes." rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-                  <p className="field-help">Tip: describe measurable outcome and deadline context for easier steering.</p>
-                </div>
-                <Button className="w-full">Save Project</Button>
+                <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
+                <FormErrors errors={errors} />
+
+                <FormField
+                  label="Project Name"
+                  name="name"
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  onBlur={() => markFieldTouched("name")}
+                  error={errors.name}
+                  touched={touched.name}
+                  placeholder="e.g. Internal Audit Readiness 2026"
+                  helpText="Minimum 2 characters"
+                  required
+                />
+
+                <FormField
+                  label="Description"
+                  name="description"
+                  type="textarea"
+                  value={form.description}
+                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                  onBlur={() => markFieldTouched("description")}
+                  error={errors.description}
+                  touched={touched.description}
+                  placeholder="State objective, scope, and expected quality outcomes."
+                  helpText="Max 500 characters"
+                />
+
+                <Button className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save Project"}
+                </Button>
               </form>
             </Card>
           ) : null}

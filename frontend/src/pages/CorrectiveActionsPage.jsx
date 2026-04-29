@@ -5,7 +5,9 @@ import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { Input, Select, TextArea } from "../components/ui/Input";
+import { Select } from "../components/ui/Input";
+import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 
 const initialForm = {
   title: "",
@@ -21,8 +23,9 @@ export default function CorrectiveActionsPage() {
   const [nonConformities, setNonConformities] = useState([]);
   const [filters, setFilters] = useState({ status: "", severity: "", effectivenessStatus: "" });
   const [form, setForm] = useState(initialForm);
-  const [submitting, setSubmitting] = useState(false);
   const [updatingId, setUpdatingId] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -59,9 +62,38 @@ export default function CorrectiveActionsPage() {
 
   async function handleCreate(event) {
     event.preventDefault();
-    setSubmitting(true);
+    clearErrors();
+    setSuccessMessage("");
+    markFieldTouched("title");
+    markFieldTouched("recommendation");
+    markFieldTouched("dueDate");
+
+    const titleError = validateField(
+      "title",
+      form.title,
+      fieldValidationRules.combine(
+        fieldValidationRules.required,
+        fieldValidationRules.minLength(5),
+        fieldValidationRules.maxLength(200),
+      ),
+    );
+    const recommendationError = validateField(
+      "recommendation",
+      form.recommendation,
+      fieldValidationRules.maxLength(500),
+    );
+    const dueDateError = validateField(
+      "dueDate",
+      form.dueDate,
+      fieldValidationRules.date,
+    );
+
+    if (titleError || recommendationError || dueDateError) {
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       await api.post("/corrective-actions", {
         title: form.title,
         recommendation: form.recommendation || null,
@@ -71,11 +103,17 @@ export default function CorrectiveActionsPage() {
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
       });
       setForm(initialForm);
+      setSuccessMessage("Action corrective creee avec succes !");
+      setTimeout(() => setSuccessMessage(""), 3000);
       await loadData();
     } catch (error) {
-      setState((prev) => ({ ...prev, error: getErrorMessage(error) }));
+      if (error.response?.data?.fieldErrors) {
+        handleApiError(error.response.data);
+      } else {
+        handleApiError({ message: getErrorMessage(error), fieldErrors: {} });
+      }
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -218,62 +256,99 @@ export default function CorrectiveActionsPage() {
         <Card className="p-5">
           <CardHeader title="Create CAPA" subtitle="Register a corrective/preventive action linked to a quality event." />
           <form className="space-y-2" onSubmit={handleCreate}>
-            <div className="field-group">
-              <label className="field-label">Action Title</label>
-              <Input
-                required
-                value={form.title}
-                placeholder="e.g. Implement second-level review before release"
-                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Recommendation</label>
-              <TextArea
-                rows={3}
-                value={form.recommendation}
-                placeholder="State corrective action steps, owner expectations, and success criteria."
-                onChange={(event) => setForm((prev) => ({ ...prev, recommendation: event.target.value }))}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Severity</label>
-              <Select value={form.severity} onChange={(event) => setForm((prev) => ({ ...prev, severity: event.target.value }))}>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Source</label>
-              <Select value={form.source} onChange={(event) => setForm((prev) => ({ ...prev, source: event.target.value }))}>
-                <option value="MANUAL">MANUAL</option>
-                <option value="OVERDUE_TASK">OVERDUE_TASK</option>
-                <option value="DELAYED_PROJECT">DELAYED_PROJECT</option>
-                <option value="KPI_DEVIATION">KPI_DEVIATION</option>
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Linked Non-Conformity</label>
-              <Select value={form.nonConformityId} onChange={(event) => setForm((prev) => ({ ...prev, nonConformityId: event.target.value }))}>
-                <option value="">Select non-conformity (optional)</option>
-                {nonConformities.map((item) => (
-                  <option key={item.id} value={item.id}>{item.title}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Due Date</label>
-              <Input
-                type="date"
-                value={form.dueDate}
-                onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
-              />
-              <p className="field-help">Set a realistic completion date aligned with risk severity.</p>
-            </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Saving..." : "Create Corrective Action"}
+            <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
+            <FormErrors errors={errors} />
+
+            <FormField
+              label="Action Title"
+              name="title"
+              type="text"
+              value={form.title}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              onBlur={() => markFieldTouched("title")}
+              error={errors.title}
+              touched={touched.title}
+              placeholder="e.g. Implement second-level review before release"
+              helpText="Minimum 5 characters"
+              required
+            />
+
+            <FormField
+              label="Recommendation"
+              name="recommendation"
+              type="textarea"
+              value={form.recommendation}
+              onChange={(event) => setForm((prev) => ({ ...prev, recommendation: event.target.value }))}
+              onBlur={() => markFieldTouched("recommendation")}
+              error={errors.recommendation}
+              touched={touched.recommendation}
+              placeholder="State corrective action steps, owner expectations, and success criteria."
+              helpText="Max 500 characters"
+            />
+
+            <FormField
+              label="Severity"
+              name="severity"
+              type="select"
+              value={form.severity}
+              onChange={(event) => setForm((prev) => ({ ...prev, severity: event.target.value }))}
+              onBlur={() => markFieldTouched("severity")}
+              error={errors.severity}
+              touched={touched.severity}
+            >
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </FormField>
+
+            <FormField
+              label="Source"
+              name="source"
+              type="select"
+              value={form.source}
+              onChange={(event) => setForm((prev) => ({ ...prev, source: event.target.value }))}
+              onBlur={() => markFieldTouched("source")}
+              error={errors.source}
+              touched={touched.source}
+            >
+              <option value="MANUAL">MANUAL</option>
+              <option value="OVERDUE_TASK">OVERDUE_TASK</option>
+              <option value="DELAYED_PROJECT">DELAYED_PROJECT</option>
+              <option value="KPI_DEVIATION">KPI_DEVIATION</option>
+            </FormField>
+
+            <FormField
+              label="Linked Non-Conformity"
+              name="nonConformityId"
+              type="select"
+              value={form.nonConformityId}
+              onChange={(event) => setForm((prev) => ({ ...prev, nonConformityId: event.target.value }))}
+              onBlur={() => markFieldTouched("nonConformityId")}
+              error={errors.nonConformityId}
+              touched={touched.nonConformityId}
+              helpText="Optional link"
+            >
+              <option value="">Select non-conformity (optional)</option>
+              {nonConformities.map((item) => (
+                <option key={item.id} value={item.id}>{item.title}</option>
+              ))}
+            </FormField>
+
+            <FormField
+              label="Due Date"
+              name="dueDate"
+              type="date"
+              value={form.dueDate}
+              onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+              onBlur={() => markFieldTouched("dueDate")}
+              error={errors.dueDate}
+              touched={touched.dueDate}
+              helpText="Set a realistic completion date aligned with risk severity."
+            />
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create Corrective Action"}
             </Button>
           </form>
         </Card>

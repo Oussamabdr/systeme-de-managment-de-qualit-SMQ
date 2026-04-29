@@ -5,12 +5,14 @@ import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
-import { Input, Select, TextArea } from "../components/ui/Input";
+import { Select } from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskRow from "../components/tasks/TaskRow";
 import { useAuthStore } from "../store/authStore";
+import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 
 const statusMap = {
   TODO: "Todo",
@@ -63,6 +65,8 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useState("table");
   const [filterProcessId, setFilterProcessId] = useState(processFilterFromUrl);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const load = async () => {
@@ -118,7 +122,53 @@ export default function TasksPage() {
     event.preventDefault();
     if (!canCreateTask) return;
 
+    clearErrors();
+    setSuccessMessage("");
+    markFieldTouched("title");
+    markFieldTouched("dueDate");
+    markFieldTouched("projectId");
+    markFieldTouched("processId");
+    markFieldTouched("description");
+
+    const titleError = validateField(
+      "title",
+      form.title,
+      fieldValidationRules.combine(
+        fieldValidationRules.required,
+        fieldValidationRules.minLength(3),
+        fieldValidationRules.maxLength(200),
+      ),
+    );
+    const descriptionError = validateField(
+      "description",
+      form.description,
+      fieldValidationRules.maxLength(1000),
+    );
+    const dueDateError = validateField(
+      "dueDate",
+      form.dueDate,
+      fieldValidationRules.combine(
+        fieldValidationRules.date,
+        fieldValidationRules.futureDate,
+      ),
+    );
+    const projectError = validateField(
+      "projectId",
+      form.projectId,
+      fieldValidationRules.required,
+    );
+    const processError = validateField(
+      "processId",
+      form.processId,
+      fieldValidationRules.required,
+    );
+
+    if (titleError || descriptionError || dueDateError || projectError || processError) {
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       await api.post("/tasks", {
         title: form.title,
         description: form.description || null,
@@ -134,9 +184,17 @@ export default function TasksPage() {
         projectId: prev.projectId,
         processId: prev.processId,
       }));
+      setSuccessMessage("Tache creee avec succes !");
+      setTimeout(() => setSuccessMessage(""), 3000);
       await load();
     } catch (err) {
-      setError(getErrorMessage(err));
+      if (err.response?.data?.fieldErrors) {
+        handleApiError(err.response.data);
+      } else {
+        handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -200,47 +258,105 @@ export default function TasksPage() {
         <section className="saas-card p-5">
           <CardHeader title="Create Task" subtitle="Assignment happens during creation." />
           <form className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3" onSubmit={createTask}>
-            <div className="field-group">
-              <label className="field-label">Task Title</label>
-              <Input placeholder="e.g. Validate supplier audit report" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
+            <div className="md:col-span-2 xl:col-span-3">
+              <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
+              <FormErrors errors={errors} />
             </div>
-            <div className="field-group">
-              <label className="field-label">Deadline</label>
-              <Input type="date" value={form.dueDate} onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))} />
-            </div>
-            <div className="field-group">
-              <label className="field-label">Project</label>
-              <Select value={form.projectId} onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))} required>
-                <option value="">Select project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>{project.name}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Process</label>
-              <Select value={form.processId} onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))} required>
-                <option value="">Select process</option>
-                {processes.map((process) => (
-                  <option key={process.id} value={process.id}>{process.name}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="field-group">
-              <label className="field-label">Assignee</label>
-              <Select value={form.assigneeId} onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}>
-                <option value="">Select assignee (optional)</option>
-                {users.map((member) => (
-                  <option key={member.id} value={member.id}>{member.fullName}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="field-group md:col-span-2 xl:col-span-3">
-              <label className="field-label">Description</label>
-              <TextArea rows={3} placeholder="Describe expected deliverable, acceptance criteria, and dependencies." value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
-              <p className="field-help">Tip: include measurable completion criteria to simplify review and closure.</p>
-            </div>
-            <Button className="md:col-span-2 xl:col-span-3">Create Task</Button>
+
+            <FormField
+              label="Task Title"
+              name="title"
+              type="text"
+              value={form.title}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+              onBlur={() => markFieldTouched("title")}
+              error={errors.title}
+              touched={touched.title}
+              placeholder="e.g. Validate supplier audit report"
+              helpText="Minimum 3 characters"
+              required
+            />
+
+            <FormField
+              label="Deadline"
+              name="dueDate"
+              type="date"
+              value={form.dueDate}
+              onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+              onBlur={() => markFieldTouched("dueDate")}
+              error={errors.dueDate}
+              touched={touched.dueDate}
+              helpText="Must be today or later"
+            />
+
+            <FormField
+              label="Project"
+              name="projectId"
+              type="select"
+              value={form.projectId}
+              onChange={(event) => setForm((prev) => ({ ...prev, projectId: event.target.value }))}
+              onBlur={() => markFieldTouched("projectId")}
+              error={errors.projectId}
+              touched={touched.projectId}
+              required
+            >
+              <option value="">Select project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.name}</option>
+              ))}
+            </FormField>
+
+            <FormField
+              label="Process"
+              name="processId"
+              type="select"
+              value={form.processId}
+              onChange={(event) => setForm((prev) => ({ ...prev, processId: event.target.value }))}
+              onBlur={() => markFieldTouched("processId")}
+              error={errors.processId}
+              touched={touched.processId}
+              required
+            >
+              <option value="">Select process</option>
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>{process.name}</option>
+              ))}
+            </FormField>
+
+            <FormField
+              label="Assignee"
+              name="assigneeId"
+              type="select"
+              value={form.assigneeId}
+              onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}
+              onBlur={() => markFieldTouched("assigneeId")}
+              error={errors.assigneeId}
+              touched={touched.assigneeId}
+              helpText="Optional assignment"
+            >
+              <option value="">Select assignee (optional)</option>
+              {users.map((member) => (
+                <option key={member.id} value={member.id}>{member.fullName}</option>
+              ))}
+            </FormField>
+
+            <FormField
+              label="Description"
+              name="description"
+              type="textarea"
+              value={form.description}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              onBlur={() => markFieldTouched("description")}
+              error={errors.description}
+              touched={touched.description}
+              placeholder="Describe expected deliverable, acceptance criteria, and dependencies."
+              helpText="Max 1000 characters"
+              className="md:col-span-2 xl:col-span-3"
+            />
+
+            <Button className="md:col-span-2 xl:col-span-3" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create Task"}
+            </Button>
           </form>
         </section>
       ) : null}
