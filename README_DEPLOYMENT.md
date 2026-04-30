@@ -19,25 +19,27 @@ Your application is fully built and ready to deploy. Follow the exact steps in *
 
 ## Quick Links
 
-| Document | Purpose |
-|----------|---------|
+| Document                                           | Purpose                                 |
+| -------------------------------------------------- | --------------------------------------- |
 | **[DEPLOY_IMMEDIATELY.md](DEPLOY_IMMEDIATELY.md)** | **DEPLOY NOW - Exact copy-paste steps** |
-| [DEPLOY_NOW.md](DEPLOY_NOW.md) | 60-second quick deployment guide |
-| [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) | Detailed verification checklist |
-| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Comprehensive technical guide |
-| [INDEX.md](INDEX.md) | Project navigation guide |
+| [DEPLOY_NOW.md](DEPLOY_NOW.md)                     | 60-second quick deployment guide        |
+| [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) | Detailed verification checklist         |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)         | Comprehensive technical guide           |
+| [INDEX.md](INDEX.md)                               | Project navigation guide                |
 
 ---
 
 ## What's Ready
 
 ### Frontend (React + Vite)
+
 - Bilingual interface (French/English)
 - All 12 pages + components localized
 - Production build: 1.44s
 - All assets optimized
 
 ### Backend (Node.js + Express + Prisma)
+
 - REST API with all endpoints
 - PostgreSQL database with ORM
 - JWT authentication
@@ -45,6 +47,7 @@ Your application is fully built and ready to deploy. Follow the exact steps in *
 - Database migrations and seeding
 
 ### Infrastructure (Render.com)
+
 - render.yaml with Blueprint configuration
 - Automatic GitHub integration
 - Environment variables pre-configured
@@ -96,11 +99,13 @@ iso/
 ## Environment Variables
 
 Render.com will auto-generate these:
+
 - `NODE_VERSION`: 20
 - `JWT_SECRET`: Auto-generated
 - `VITE_API_URL`: Auto-linked to backend
 
 You'll need to provide:
+
 - `DATABASE_URL`: PostgreSQL connection string
 
 ---

@@ -9,12 +9,14 @@ Your application is 100% ready. This file gives you the exact copy-paste steps t
 ## STEP 1: Open Render Dashboard (1 minute)
 
 Go to this URL in your browser:
+
 ```
 https://dashboard.render.com
 ```
 
 If not logged in:
-- Click "Sign In" 
+
+- Click "Sign In"
 - Sign in with GitHub
 - Authorize if prompted
 
@@ -25,6 +27,7 @@ If not logged in:
 In the Render dashboard:
 
 **Option A - Using Blueprint (RECOMMENDED):**
+
 1. Click blue **"New +"** button (top right)
 2. Select **"Blueprint"**
 3. Click **"Connect Repository"**
@@ -35,6 +38,7 @@ In the Render dashboard:
 **Option B - Manual (if Blueprint option unavailable):**
 
 **For Backend:**
+
 1. Click **"New +"** → **"Web Service"**
 2. Select your GitHub repository
 3. Fill in:
@@ -51,6 +55,7 @@ In the Render dashboard:
 6. Click **"Deploy"**
 
 **For Frontend:**
+
 1. Click **"New +"** → **"Static Site"**
 2. Select your GitHub repository
 3. Fill in:
@@ -67,6 +72,7 @@ In the Render dashboard:
 ## STEP 3: Monitor Deployment (4-6 minutes)
 
 After clicking deploy:
+
 1. You'll see build logs in real-time
 2. Watch for these messages:
    - "Building..." (1-2 min)
@@ -75,6 +81,7 @@ After clicking deploy:
 3. You'll see TWO ✅ when both services are live
 
 You'll get two URLs:
+
 - Backend: `https://iso-qms-api-xxxx.render.com`
 - Frontend: `https://iso-qms-frontend-xxxx.render.com`
 
@@ -83,6 +90,7 @@ You'll get two URLs:
 ## STEP 4: Test Your Live App (2 minutes)
 
 1. **Open Frontend URL** in browser:
+
    ```
    https://iso-qms-frontend-xxxx.render.com
    ```
@@ -118,7 +126,7 @@ You'll get two URLs:
 ✅ render.yaml - complete and pushed  
 ✅ Database migrations - configured  
 ✅ Environment variables - templates ready  
-✅ Git - all commits pushed to main branch  
+✅ Git - all commits pushed to main branch
 
 **Nothing more to coding - just deploy!**
 
@@ -127,24 +135,29 @@ You'll get two URLs:
 ## QUICK TROUBLESHOOTING
 
 **"Deploy button won't work"**
+
 - Make sure you're logged in with GitHub
 - Make sure you have an active GitHub account with the repo
 
 **"Build fails: Cannot find npm"**
+
 - Render will auto-install Node 20 (configured in render.yaml)
 - Just wait, Render handles this
 
 **"Frontend shows blank page"**
+
 - Wait 1-2 min for initialization
 - Hard refresh browser (Ctrl+Shift+Delete)
 - Check browser console (F12) for errors
 
 **"Language switching doesn't work"**
+
 - Clear browser cache (Ctrl+Shift+Delete)
 - Check that frontend URL is loading
 - Check that API calls succeed in Network tab
 
 **"CORS error in console"**
+
 - Update Backend `CORS_ORIGIN` environment variable to match Frontend URL
 - Redeploy backend
 
@@ -170,14 +183,14 @@ When you hit "Deploy", Render will:
 
 ## TIMELINE
 
-| Step | Duration |
-|------|----------|
-| Go to render.com | 1 min |
-| Create/Deploy services | 1 min |
-| Build backend | 1-2 min |
-| Build frontend | 1-2 min |
-| Deploy + migrations | 1 min |
-| **TOTAL** | **4-6 min** |
+| Step                   | Duration    |
+| ---------------------- | ----------- |
+| Go to render.com       | 1 min       |
+| Create/Deploy services | 1 min       |
+| Build backend          | 1-2 min     |
+| Build frontend         | 1-2 min     |
+| Deploy + migrations    | 1 min       |
+| **TOTAL**              | **4-6 min** |
 
 ---
 
@@ -207,12 +220,12 @@ When you hit "Deploy", Render will:
 Git Status: ✅ All pushed to origin/main  
 Build Status: ✅ Production builds verified  
 Config Status: ✅ render.yaml ready  
-Verification: ✅ All checks pass  
+Verification: ✅ All checks pass
 
 **DEPLOYMENT READY: YES**
 
 ---
 
-*Last update: 2024-12-19*  
-*Latest commit: 1cf3b1c*  
-*Status: Production Ready*
+_Last update: 2024-12-19_  
+_Latest commit: 1cf3b1c_  
+_Status: Production Ready_
