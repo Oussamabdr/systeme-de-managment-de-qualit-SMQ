@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import { Input, Select } from "../components/ui/Input";
@@ -10,6 +12,9 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const register = useAuthStore((state) => state.register);
   const loading = useAuthStore((state) => state.loading);
+  const language = useUiStore((state) => state.language);
+
+  const text = (fr, en) => t(language, fr, en);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -34,11 +39,11 @@ export default function RegisterPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl items-center p-4">
       <Card className="w-full p-8">
-        <CardHeader title="Create account" subtitle="Access the ESI ISO 9001 project workspace." />
+        <CardHeader title={text("Creer un compte", "Create account")} subtitle={text("Accedez a l'espace de travail du projet ISO 9001 ESI.", "Access the ESI ISO 9001 project workspace.")} />
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
-            <label className="mb-1 block text-sm text-slate-600">Full name</label>
+            <label className="mb-1 block text-sm text-slate-600">{text("Nom complet", "Full name")}</label>
             <Input
               value={form.fullName}
               onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
@@ -47,7 +52,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-slate-600">Email</label>
+            <label className="mb-1 block text-sm text-slate-600">{text("Email", "Email")}</label>
             <Input
               type="email"
               value={form.email}
@@ -57,7 +62,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-slate-600">Password</label>
+            <label className="mb-1 block text-sm text-slate-600">{text("Mot de passe", "Password")}</label>
             <Input
               type="password"
               value={form.password}
@@ -67,26 +72,26 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-slate-600">Role</label>
+            <label className="mb-1 block text-sm text-slate-600">{text("Role", "Role")}</label>
             <Select
               value={form.role}
               onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
             >
-              <option value="TEAM_MEMBER">Team Member</option>
-              <option value="PROJECT_MANAGER">Project Manager</option>
-              <option value="ADMIN">Admin</option>
+              <option value="TEAM_MEMBER">{text("Membre de l'equipe", "Team Member")}</option>
+              <option value="PROJECT_MANAGER">{text("Responsable de projet", "Project Manager")}</option>
+              <option value="ADMIN">{text("Administration", "Admin")}</option>
             </Select>
           </div>
 
           {error ? <p className="text-sm text-rose-700">{error}</p> : null}
 
           <Button className="w-full" disabled={loading}>
-            {loading ? "Creating..." : "Register"}
+            {loading ? text("Verification en cours...", "Creating...") : text("S'inscrire", "Register")}
           </Button>
         </form>
 
         <p className="mt-4 text-sm text-slate-600">
-          Already have an account? <Link className="font-semibold text-emerald-700" to="/login">Sign in</Link>
+          {text("Vous avez deja un compte ? ", "Already have an account? ")}<Link className="font-semibold text-emerald-700" to="/login">{text("Se connecter", "Sign in")}</Link>
         </p>
       </Card>
     </div>

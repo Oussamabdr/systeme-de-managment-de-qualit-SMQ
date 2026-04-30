@@ -11,6 +11,8 @@ import ProjectProgress from "../components/projects/ProjectProgress";
 import StatusBadge from "../components/ui/StatusBadge";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormField, FormErrors, SuccessMessage } from "../components/form/FormField";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 
 const initialForm = {
   name: "",
@@ -50,6 +52,8 @@ export default function ProcessesPage() {
   const [form, setForm] = useState(initialForm);
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, handleApiError, clearErrors, hasErrors } = useFormValidation();
+  const language = useUiStore((state) => state.language);
+  const text = (fr, en) => t(language, fr, en);
 
   const loadProcesses = async () => {
     try {
@@ -88,7 +92,7 @@ export default function ProcessesPage() {
       setIsSubmitting(true);
       await api.post("/processes", payload);
       setForm(initialForm);
-      setSuccessMessage("Processus créé avec succès!");
+      setSuccessMessage(text("Processus cree avec succes!", "Process created successfully!"));
       setTimeout(() => setSuccessMessage(""), 3000);
       loadProcesses();
     } catch (err) {
@@ -107,24 +111,30 @@ export default function ProcessesPage() {
   const applyProcessTemplate = (template) => {
     if (template === "procurement") {
       setForm({
-        name: "Procurement Control",
-        description: "Control supplier selection, purchase validation, and reception acceptance criteria.",
-        responsiblePerson: "Quality Manager",
-        inputs: "Purchase request, Specification, Budget",
-        outputs: "Approved order, Delivery record, Acceptance report",
-        indicators: "On-time delivery, Supplier conformity rate",
+        name: text("Controle des achats", "Procurement Control"),
+        description: text(
+          "Controler la selection fournisseur, la validation des achats et la reception.",
+          "Control supplier selection, purchase validation, and reception acceptance criteria.",
+        ),
+        responsiblePerson: text("Responsable qualite", "Quality Manager"),
+        inputs: text("Demande d'achat, Specification, Budget", "Purchase request, Specification, Budget"),
+        outputs: text("Commande approuvee, Bon de livraison, Rapport d'acceptation", "Approved order, Delivery record, Acceptance report"),
+        indicators: text("Livraison a temps, Taux de conformite fournisseur", "On-time delivery, Supplier conformity rate"),
       });
       return;
     }
 
     if (template === "audit") {
       setForm({
-        name: "Internal Audit Process",
-        description: "Plan and execute internal audits, consolidate findings, and monitor action closure.",
+        name: text("Processus d'audit interne", "Internal Audit Process"),
+        description: text(
+          "Planifier les audits internes, consolider les constats et suivre les actions.",
+          "Plan and execute internal audits, consolidate findings, and monitor action closure.",
+        ),
         responsiblePerson: "CAQ",
-        inputs: "Audit plan, Previous findings, Process documentation",
-        outputs: "Audit report, Non-conformity log, CAPA requests",
-        indicators: "Audit completion rate, Finding closure rate",
+        inputs: text("Plan d'audit, Constats precedents, Documentation processus", "Audit plan, Previous findings, Process documentation"),
+        outputs: text("Rapport d'audit, Registre NC, Demandes CAPA", "Audit report, Non-conformity log, CAPA requests"),
+        indicators: text("Taux de realisation des audits, Taux de cloture des constats", "Audit completion rate, Finding closure rate"),
       });
       return;
     }
@@ -135,14 +145,14 @@ export default function ProcessesPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Process Architecture"
-        subtitle={`Governed process map with ${totalTasks} linked execution tasks.`}
+        title={text("Architecture des processus", "Process Architecture")}
+        subtitle={text(`Carte de processus gouvernee avec ${totalTasks} taches d'execution liees.`, `Governed process map with ${totalTasks} linked execution tasks.`)}
       />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <Card className="p-0 overflow-hidden">
           <div className="px-5 pt-5">
-            <CardHeader title="Process Library" subtitle="Owner, workload and drill-down access." />
+            <CardHeader title={text("Bibliothèque des processus", "Process Library")} subtitle={text("Proprietaire, charge de travail et acces au detail.", "Owner, workload and drill-down access.")} />
           </div>
           <Table headers={["Name", "Responsible", "Tasks", "Progress", "Status", "Related Tasks", "Action"]}>
             {processes.map((process) => (
@@ -197,27 +207,30 @@ export default function ProcessesPage() {
         </Card>
 
         <Card className="p-5">
-          <CardHeader title="Create Process" subtitle="Add a controlled ISO process definition." />
+          <CardHeader title={text("Creer un processus", "Create Process")} subtitle={text("Ajouter une definition ISO controlee.", "Add a controlled ISO process definition.")} />
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("procurement")}>
-              Use Procurement Template
+              {text("Modele achats", "Use Procurement Template")}
             </Button>
             <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("audit")}>
-              Use Audit Template
+              {text("Modele audit", "Use Audit Template")}
             </Button>
             <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("reset")}>
-              Reset
+              {text("Reinitialiser", "Reset")}
             </Button>
           </div>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-            Indicators accept JSON array or plain list (comma, semicolon, or line-separated).
+            {text(
+              "Les indicateurs acceptent un tableau JSON ou une liste simple (virgule, point-virgule, ligne).",
+              "Indicators accept JSON array or plain list (comma, semicolon, or line-separated).",
+            )}
           </p>
           <form className="mt-3 space-y-3" onSubmit={onSubmit}>
             <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
             <FormErrors errors={errors} />
 
             <FormField
-              label="Process Name"
+              label={text("Nom du processus", "Process Name")}
               name="name"
               type="text"
               value={form.name}
@@ -225,13 +238,13 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("name")}
               error={errors.name}
               touched={touched.name}
-              placeholder="e.g. Procurement Control"
-              helpText="Name must be at least 2 characters"
+              placeholder={text("ex. Controle des achats", "e.g. Procurement Control")}
+              helpText={text("Minimum 2 caracteres", "Name must be at least 2 characters")}
               required
             />
 
             <FormField
-              label="Responsible Person"
+              label={text("Responsable", "Responsible Person")}
               name="responsiblePerson"
               type="text"
               value={form.responsiblePerson}
@@ -239,12 +252,12 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("responsiblePerson")}
               error={errors.responsiblePerson}
               touched={touched.responsiblePerson}
-              placeholder="e.g. Quality Manager"
+              placeholder={text("ex. Responsable qualite", "e.g. Quality Manager")}
               required
             />
 
             <FormField
-              label="Description"
+              label={text("Description", "Description")}
               name="description"
               type="textarea"
               value={form.description}
@@ -252,12 +265,12 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("description")}
               error={errors.description}
               touched={touched.description}
-              placeholder="Describe scope, controls, and expected outcomes."
-              helpText="Max 500 characters"
+              placeholder={text("Decrire le perimetre, les controles et les resultats.", "Describe scope, controls, and expected outcomes.")}
+              helpText={text("Max 500 caracteres", "Max 500 characters")}
             />
 
             <FormField
-              label="Inputs"
+              label={text("Entrees", "Inputs")}
               name="inputs"
               type="text"
               value={form.inputs}
@@ -265,11 +278,11 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("inputs")}
               error={errors.inputs}
               touched={touched.inputs}
-              placeholder="e.g. Request, Specification, Budget"
+              placeholder={text("ex. Demande, Specification, Budget", "e.g. Request, Specification, Budget")}
             />
 
             <FormField
-              label="Outputs"
+              label={text("Sorties", "Outputs")}
               name="outputs"
               type="text"
               value={form.outputs}
@@ -277,11 +290,11 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("outputs")}
               error={errors.outputs}
               touched={touched.outputs}
-              placeholder="e.g. Approved order, Delivery, Acceptance report"
+              placeholder={text("ex. Commande, Livraison, Rapport", "e.g. Approved order, Delivery, Acceptance report")}
             />
 
             <FormField
-              label="KPI Indicators"
+              label={text("Indicateurs KPI", "KPI Indicators")}
               name="indicators"
               type="textarea"
               value={form.indicators}
@@ -289,12 +302,15 @@ export default function ProcessesPage() {
               onBlur={() => markFieldTouched("indicators")}
               error={errors.indicators}
               touched={touched.indicators}
-              placeholder="e.g. Closure rate, On-time delivery"
-              helpText="If you type plain KPI names, defaults are auto-created (target 100, current 0)."
+              placeholder={text("ex. Taux de cloture, Livraison a temps", "e.g. Closure rate, On-time delivery")}
+              helpText={text(
+                "Si vous saisissez des noms simples, les valeurs par defaut sont creees (cible 100, actuel 0).",
+                "If you type plain KPI names, defaults are auto-created (target 100, current 0).",
+              )}
             />
 
             <Button className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Process"}
+              {isSubmitting ? text("Enregistrement...", "Saving...") : text("Enregistrer le processus", "Save Process")}
             </Button>
           </form>
         </Card>

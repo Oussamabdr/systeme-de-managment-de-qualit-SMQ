@@ -8,6 +8,8 @@ import Button from "../components/ui/Button";
 import { Select } from "../components/ui/Input";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 
 const initialForm = {
   title: "",
@@ -26,6 +28,8 @@ export default function CorrectiveActionsPage() {
   const [updatingId, setUpdatingId] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
+  const language = useUiStore((state) => state.language);
+  const text = (fr, en) => t(language, fr, en);
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -103,7 +107,7 @@ export default function CorrectiveActionsPage() {
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
       });
       setForm(initialForm);
-      setSuccessMessage("Action corrective creee avec succes !");
+      setSuccessMessage(text("Action corrective creee avec succes !", "Corrective action created successfully!"));
       setTimeout(() => setSuccessMessage(""), 3000);
       await loadData();
     } catch (error) {
@@ -143,15 +147,15 @@ export default function CorrectiveActionsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="CAPA Command Center"
-        subtitle="Plan, prioritize, and track corrective/preventive actions with ISO closure controls."
+        title={text("Centre de commande CAPA", "CAPA Command Center")}
+        subtitle={text("Planifier, prioriser et suivre les actions correctives/preventives avec les controles de fermeture ISO.", "Plan, prioritize, and track corrective/preventive actions with ISO closure controls.")}
       />
 
       {state.error ? <div className="saas-card p-4 text-rose-700">{state.error}</div> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Total CAPA</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{text("CAPA total", "Total CAPA")}</p>
           <p className="mt-2 text-3xl font-semibold text-slate-900">{totals.total}</p>
         </Card>
         <Card className="p-4">
@@ -175,14 +179,14 @@ export default function CorrectiveActionsPage() {
       <section className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card className="p-5">
           <CardHeader
-            title="Open Action Portfolio"
-            subtitle="Priority-sorted actions for quality steering and escalation."
+            title={text("Portefeuille d'actions ouvert", "Open Action Portfolio")}
+            subtitle={text("Actions triees par priorite pour la direction qualite et l'escalade.", "Priority-sorted actions for quality steering and escalation.")}
             action={<Badge tone="amber">{state.data.length}</Badge>}
           />
 
           <div className="mb-3 grid gap-2 md:grid-cols-3">
             <Select value={filters.status} onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}>
-              <option value="">All status</option>
+              <option value="">{text("Tous les statuts", "All status")}</option>
               <option value="OPEN">OPEN</option>
               <option value="IN_PROGRESS">IN_PROGRESS</option>
               <option value="DONE">DONE</option>
@@ -254,13 +258,19 @@ export default function CorrectiveActionsPage() {
         </Card>
 
         <Card className="p-5">
-          <CardHeader title="Create CAPA" subtitle="Register a corrective/preventive action linked to a quality event." />
+          <CardHeader
+            title={text("Creer une CAPA", "Create CAPA")}
+            subtitle={text(
+              "Enregistrer une action corrective/preventive liee a un evenement qualite.",
+              "Register a corrective/preventive action linked to a quality event.",
+            )}
+          />
           <form className="space-y-2" onSubmit={handleCreate}>
             <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
             <FormErrors errors={errors} />
 
             <FormField
-              label="Action Title"
+              label={text("Titre de l'action", "Action Title")}
               name="title"
               type="text"
               value={form.title}
@@ -268,13 +278,16 @@ export default function CorrectiveActionsPage() {
               onBlur={() => markFieldTouched("title")}
               error={errors.title}
               touched={touched.title}
-              placeholder="e.g. Implement second-level review before release"
-              helpText="Minimum 5 characters"
+              placeholder={text(
+                "ex. Mettre en place une revue avant publication",
+                "e.g. Implement second-level review before release",
+              )}
+              helpText={text("Minimum 5 caracteres", "Minimum 5 characters")}
               required
             />
 
             <FormField
-              label="Recommendation"
+              label={text("Recommandation", "Recommendation")}
               name="recommendation"
               type="textarea"
               value={form.recommendation}
@@ -282,12 +295,15 @@ export default function CorrectiveActionsPage() {
               onBlur={() => markFieldTouched("recommendation")}
               error={errors.recommendation}
               touched={touched.recommendation}
-              placeholder="State corrective action steps, owner expectations, and success criteria."
-              helpText="Max 500 characters"
+              placeholder={text(
+                "Decrire les etapes, les attentes et les criteres de succes.",
+                "State corrective action steps, owner expectations, and success criteria.",
+              )}
+              helpText={text("Max 500 caracteres", "Max 500 characters")}
             />
 
             <FormField
-              label="Severity"
+              label={text("Gravite", "Severity")}
               name="severity"
               type="select"
               value={form.severity}
@@ -303,7 +319,7 @@ export default function CorrectiveActionsPage() {
             </FormField>
 
             <FormField
-              label="Source"
+              label={text("Source", "Source")}
               name="source"
               type="select"
               value={form.source}
@@ -319,7 +335,7 @@ export default function CorrectiveActionsPage() {
             </FormField>
 
             <FormField
-              label="Linked Non-Conformity"
+              label={text("Non-conformite liee", "Linked Non-Conformity")}
               name="nonConformityId"
               type="select"
               value={form.nonConformityId}
@@ -327,16 +343,16 @@ export default function CorrectiveActionsPage() {
               onBlur={() => markFieldTouched("nonConformityId")}
               error={errors.nonConformityId}
               touched={touched.nonConformityId}
-              helpText="Optional link"
+              helpText={text("Lien optionnel", "Optional link")}
             >
-              <option value="">Select non-conformity (optional)</option>
+              <option value="">{text("Selectionner une non-conformite (optionnel)", "Select non-conformity (optional)")}</option>
               {nonConformities.map((item) => (
                 <option key={item.id} value={item.id}>{item.title}</option>
               ))}
             </FormField>
 
             <FormField
-              label="Due Date"
+              label={text("Date limite", "Due Date")}
               name="dueDate"
               type="date"
               value={form.dueDate}
@@ -344,11 +360,14 @@ export default function CorrectiveActionsPage() {
               onBlur={() => markFieldTouched("dueDate")}
               error={errors.dueDate}
               touched={touched.dueDate}
-              helpText="Set a realistic completion date aligned with risk severity."
+              helpText={text(
+                "Fixer une date realiste en fonction de la gravite.",
+                "Set a realistic completion date aligned with risk severity.",
+              )}
             />
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Create Corrective Action"}
+              {isSubmitting ? text("Enregistrement...", "Saving...") : text("Creer l'action corrective", "Create Corrective Action")}
             </Button>
           </form>
         </Card>

@@ -13,12 +13,14 @@ import TaskRow from "../components/tasks/TaskRow";
 import { useAuthStore } from "../store/authStore";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 
-const statusMap = {
-  TODO: "Todo",
-  IN_PROGRESS: "In Progress",
-  DONE: "Done",
-};
+const getStatusMap = (language) => ({
+  TODO: t(language, "À faire", "Todo"),
+  IN_PROGRESS: t(language, "En cours", "In Progress"),
+  DONE: t(language, "Terminé", "Done"),
+});
 
 const initialForm = {
   title: "",
@@ -67,7 +69,36 @@ export default function TasksPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
+  const language = useUiStore((state) => state.language);
+  const text = (fr, en) => t(language, fr, en);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const taskTemplates = {
+    audit: {
+      title: text("Preparer le rapport d'audit interne", "Prepare internal audit report"),
+      description: text(
+        "Compiler les constats, evidences et recommandations pour validation.",
+        "Compile findings, evidence, and recommendations.",
+      ),
+      dueInDays: 7,
+    },
+    supplier: {
+      title: text("Verifier la conformite fournisseur", "Verify supplier conformity"),
+      description: text(
+        "Reviser le dossier fournisseur et verifier les ecarts de livraison.",
+        "Review supplier file and delivery deviations.",
+      ),
+      dueInDays: 14,
+    },
+    control: {
+      title: text("Verifier les documents de controle", "Verify controlled documents"),
+      description: text(
+        "Controler les versions, signatures et preuves de diffusion.",
+        "Check versions, signatures, and evidence of distribution.",
+      ),
+      dueInDays: 10,
+    },
+  };
 
   const load = async () => {
     try {
@@ -184,7 +215,7 @@ export default function TasksPage() {
         projectId: prev.projectId,
         processId: prev.processId,
       }));
-      setSuccessMessage("Tache creee avec succes !");
+      setSuccessMessage(text("Tache creee avec succes !", "Task created successfully!"));
       setTimeout(() => setSuccessMessage(""), 3000);
       await load();
     } catch (err) {
@@ -220,6 +251,31 @@ export default function TasksPage() {
     }
   };
 
+  const getFutureDate = (daysFromNow) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toISOString().slice(0, 10);
+  };
+
+  const applyTaskTemplate = (templateKey) => {
+    const template = taskTemplates[templateKey];
+    if (!template) {
+      setForm((prev) => ({
+        ...initialForm,
+        projectId: prev.projectId,
+        processId: prev.processId,
+      }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      title: template.title,
+      description: template.description,
+      dueDate: getFutureDate(template.dueInDays),
+    }));
+  };
+
   const getDropStatus = (overId) => {
     if (!overId) return null;
     if (["TODO", "IN_PROGRESS", "DONE"].includes(overId)) return overId;
@@ -245,18 +301,35 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Execution Control Board" subtitle="Coordinate assignments, deadlines, and operational throughput in one flow." />
+      <PageHeader title={text("Tableau de commande d'execution", "Execution Control Board")} subtitle={text("Coordonner les affectations, les echeances et le debit operationnel dans un seul flux.", "Coordinate assignments, deadlines, and operational throughput in one flow.")} />
       {error ? <p className="saas-card p-4 text-sm text-rose-700">{error}</p> : null}
 
       {quickAssign ? (
         <div className="saas-card border border-emerald-200 bg-emerald-50/50 p-4 text-sm text-emerald-900">
-          Quick assign mode enabled from process view. Your process filter is pre-selected.
+          {text("Mode affectation rapide active depuis la vue processus. Votre filtre de processus est pre-selectionne.", "Quick assign mode enabled from process view. Your process filter is pre-selected.")}
         </div>
       ) : null}
 
       {canCreateTask ? (
         <section className="saas-card p-5">
-          <CardHeader title="Create Task" subtitle="Assignment happens during creation." />
+          <CardHeader
+            title={text("Creer une tache", "Create Task")}
+            subtitle={text("L'affectation se fait a la creation.", "Assignment happens during creation.")}
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("audit")}>
+              {text("Modele audit interne", "Internal audit template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("supplier")}>
+              {text("Modele fournisseur", "Supplier template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("control")}>
+              {text("Modele controle documentaire", "Document control template")}
+            </Button>
+            <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("reset")}>
+              {text("Reinitialiser", "Reset")}
+            </Button>
+          </div>
           <form className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3" onSubmit={createTask}>
             <div className="md:col-span-2 xl:col-span-3">
               <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
@@ -264,7 +337,7 @@ export default function TasksPage() {
             </div>
 
             <FormField
-              label="Task Title"
+              label={text("Titre de la tache", "Task Title")}
               name="title"
               type="text"
               value={form.title}
@@ -272,13 +345,13 @@ export default function TasksPage() {
               onBlur={() => markFieldTouched("title")}
               error={errors.title}
               touched={touched.title}
-              placeholder="e.g. Validate supplier audit report"
-              helpText="Minimum 3 characters"
+              placeholder={text("ex. Valider le rapport fournisseur", "e.g. Validate supplier audit report")}
+              helpText={text("Minimum 3 caracteres", "Minimum 3 characters")}
               required
             />
 
             <FormField
-              label="Deadline"
+              label={text("Date limite", "Deadline")}
               name="dueDate"
               type="date"
               value={form.dueDate}
@@ -286,11 +359,11 @@ export default function TasksPage() {
               onBlur={() => markFieldTouched("dueDate")}
               error={errors.dueDate}
               touched={touched.dueDate}
-              helpText="Must be today or later"
+              helpText={text("Aujourd'hui ou plus tard", "Must be today or later")}
             />
 
             <FormField
-              label="Project"
+              label={text("Projet", "Project")}
               name="projectId"
               type="select"
               value={form.projectId}
@@ -300,14 +373,14 @@ export default function TasksPage() {
               touched={touched.projectId}
               required
             >
-              <option value="">Select project</option>
+              <option value="">{text("Selectionner un projet", "Select project")}</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
             </FormField>
 
             <FormField
-              label="Process"
+              label={text("Processus", "Process")}
               name="processId"
               type="select"
               value={form.processId}
@@ -317,14 +390,14 @@ export default function TasksPage() {
               touched={touched.processId}
               required
             >
-              <option value="">Select process</option>
+              <option value="">{text("Selectionner un processus", "Select process")}</option>
               {processes.map((process) => (
                 <option key={process.id} value={process.id}>{process.name}</option>
               ))}
             </FormField>
 
             <FormField
-              label="Assignee"
+              label={text("Responsable", "Assignee")}
               name="assigneeId"
               type="select"
               value={form.assigneeId}
@@ -332,16 +405,16 @@ export default function TasksPage() {
               onBlur={() => markFieldTouched("assigneeId")}
               error={errors.assigneeId}
               touched={touched.assigneeId}
-              helpText="Optional assignment"
+              helpText={text("Affectation optionnelle", "Optional assignment")}
             >
-              <option value="">Select assignee (optional)</option>
+              <option value="">{text("Selectionner un responsable (optionnel)", "Select assignee (optional)")}</option>
               {users.map((member) => (
                 <option key={member.id} value={member.id}>{member.fullName}</option>
               ))}
             </FormField>
 
             <FormField
-              label="Description"
+              label={text("Description", "Description")}
               name="description"
               type="textarea"
               value={form.description}
@@ -349,13 +422,16 @@ export default function TasksPage() {
               onBlur={() => markFieldTouched("description")}
               error={errors.description}
               touched={touched.description}
-              placeholder="Describe expected deliverable, acceptance criteria, and dependencies."
-              helpText="Max 1000 characters"
+              placeholder={text(
+                "Decrire livrables, criteres d'acceptation et dependances.",
+                "Describe expected deliverable, acceptance criteria, and dependencies.",
+              )}
+              helpText={text("1000 caracteres max", "Max 1000 characters")}
               className="md:col-span-2 xl:col-span-3"
             />
 
             <Button className="md:col-span-2 xl:col-span-3" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Create Task"}
+              {isSubmitting ? text("Enregistrement...", "Saving...") : text("Creer la tache", "Create Task")}
             </Button>
           </form>
         </section>
@@ -364,15 +440,15 @@ export default function TasksPage() {
       <section className="saas-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Select className="w-full sm:w-72" value={filterProcessId} onChange={(event) => setFilterProcessId(event.target.value)}>
-            <option value="">All processes</option>
+            <option value="">{text("Tous les processus", "All processes")}</option>
             {processes.map((process) => (
               <option key={process.id} value={process.id}>{process.name}</option>
             ))}
           </Select>
 
           <div className="flex items-center gap-2">
-            <Button type="button" variant={viewMode === "table" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("table")}>Table</Button>
-            <Button type="button" variant={viewMode === "kanban" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("kanban")}>Kanban</Button>
+            <Button type="button" variant={viewMode === "table" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("table")}>{text("Tableau", "Table")}</Button>
+            <Button type="button" variant={viewMode === "kanban" ? "primary" : "subtle"} className="px-3 py-2 text-xs" onClick={() => setViewMode("kanban")}>{text("Kanban", "Kanban")}</Button>
           </div>
         </div>
       </section>
@@ -380,17 +456,17 @@ export default function TasksPage() {
       {viewMode === "table" ? (
         <Card className="p-0 overflow-hidden">
           <div className="px-5 pt-5">
-            <CardHeader title="Inline Assignment Table" subtitle="Edit process, assignee, and deadline directly in each row." />
+            <CardHeader title={text("Tableau d'affectation direct", "Inline Assignment Table")} subtitle={text("Modifiez le processus, le responsable et la date limite directement dans chaque ligne.", "Edit process, assignee, and deadline directly in each row.")} />
           </div>
           <div className="overflow-x-auto pb-4">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500">
-                  <th className="px-4 py-3">Task</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Process</th>
-                  <th className="px-4 py-3">Assignee</th>
-                  <th className="px-4 py-3">Deadline</th>
+                  <th className="px-4 py-3">{text("Tache", "Task")}</th>
+                  <th className="px-4 py-3">{text("Statut", "Status")}</th>
+                  <th className="px-4 py-3">{text("Processus", "Process")}</th>
+                  <th className="px-4 py-3">{text("Responsable", "Assignee")}</th>
+                  <th className="px-4 py-3">{text("Date limite", "Deadline")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -400,6 +476,7 @@ export default function TasksPage() {
                     task={task}
                     processes={processes}
                     users={users}
+                    language={language}
                     canManageAssignment={canManageAssignment}
                     canEditStatus={isProjectManager || (isTeamMember && task.assigneeId === user?.id)}
                     onInlineChange={updateTaskInline}
@@ -413,14 +490,15 @@ export default function TasksPage() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
           <section className="grid gap-4 lg:grid-cols-3">
-            {Object.entries(grouped).map(([status, list]) => (
-              <KanbanColumn key={status} id={status} title={statusMap[status]} count={list.length}>
-                {list.map((task) => (
+            {Object.entries(getStatusMap(language)).map(([status, title]) => (
+              <KanbanColumn key={status} id={status} title={title} count={grouped[status]?.length || 0}>
+                {(grouped[status] || []).map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
                     processes={processes}
                     users={users}
+                    language={language}
                     canManageAssignment={canManageAssignment}
                     canEditStatus={isProjectManager || (isTeamMember && task.assigneeId === user?.id)}
                     onStatusChange={updateTaskStatus}

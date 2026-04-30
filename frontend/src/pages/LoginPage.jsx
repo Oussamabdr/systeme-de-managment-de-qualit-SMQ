@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -10,6 +12,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
+  const language = useUiStore((state) => state.language);
+
+  const text = (fr, en) => t(language, fr, en);
 
   const [form, setForm] = useState({ email: "admin@esi.edu", password: "Password123!" });
   const [error, setError] = useState("");
@@ -31,20 +36,20 @@ export default function LoginPage() {
       <div className="grid w-full gap-6 md:grid-cols-2">
         <Card className="p-8">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">ISO 9001</p>
-          <h1 className="mt-2 text-4xl font-semibold text-slate-950">QMS Project Console</h1>
+          <h1 className="mt-2 text-4xl font-semibold text-slate-950">{text("Console de Projet SGQ", "QMS Project Console")}</h1>
           <p className="mt-4 text-slate-600 leading-relaxed">
-            Coordinate processes, projects, tasks, and compliance evidence for ESI.
+            {text("Coordonnez les processus, projets, taches et preuves de conformite pour ESI.", "Coordinate processes, projects, tasks, and compliance evidence for ESI.")}
           </p>
           <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Demo credentials are pre-filled.
+            {text("Les identifiants de demonstration sont pre-remplis.", "Demo credentials are pre-filled.")}
           </div>
         </Card>
 
         <Card className="p-8">
-          <CardHeader title="Sign in" subtitle="Access your workspace." />
+          <CardHeader title={text("Se connecter", "Sign in")} subtitle={text("Accedez a votre espace de travail.", "Access your workspace.")} />
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div>
-              <label className="mb-1 block text-sm text-slate-600">Email</label>
+              <label className="mb-1 block text-sm text-slate-600">{text("Email", "Email")}</label>
               <Input
                 type="email"
                 value={form.email}
@@ -54,7 +59,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-600">Password</label>
+              <label className="mb-1 block text-sm text-slate-600">{text("Mot de passe", "Password")}</label>
               <Input
                 type="password"
                 value={form.password}
@@ -66,11 +71,11 @@ export default function LoginPage() {
             {error ? <p className="text-sm text-rose-700">{error}</p> : null}
 
             <Button className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Login"}
+              {loading ? text("Connexion en cours...", "Signing in...") : text("Se connecter", "Login")}
             </Button>
           </form>
           <p className="mt-4 text-sm text-slate-600">
-            New account? <Link className="font-semibold text-emerald-700" to="/register">Register</Link>
+            {text("Nouveau compte ? ", "New account? ")}<Link className="font-semibold text-emerald-700" to="/register">{text("S'inscrire", "Register")}</Link>
           </p>
         </Card>
       </div>

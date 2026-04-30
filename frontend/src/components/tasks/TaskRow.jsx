@@ -4,8 +4,10 @@ import EditableField from "./EditableField";
 import InlineSelect from "./InlineSelect";
 import DatePicker from "./DatePicker";
 import TaskStatusDropdown from "./TaskStatusDropdown";
+import { t } from "../../utils/i18n";
 
-export default function TaskRow({ task, processes, users, canManageAssignment, canEditStatus, onInlineChange, onStatusChange }) {
+export default function TaskRow({ task, processes, users, language, canManageAssignment, canEditStatus, onInlineChange, onStatusChange }) {
+  const text = (fr, en) => t(language, fr, en);
   const isDelayed = task.dueDate && task.status !== "DONE" && new Date(task.dueDate) < new Date();
 
   return (
@@ -24,7 +26,7 @@ export default function TaskRow({ task, processes, users, canManageAssignment, c
         )}
       </td>
       <td className="px-4 py-3 min-w-44">
-        <EditableField label="Process">
+        <EditableField label={text("Processus", "Process")}>
           {canManageAssignment ? (
             <InlineSelect value={task.processId || ""} onChange={(event) => onInlineChange(task.id, { processId: event.target.value })}>
               {processes.map((process) => (
@@ -37,28 +39,28 @@ export default function TaskRow({ task, processes, users, canManageAssignment, c
         </EditableField>
       </td>
       <td className="px-4 py-3 min-w-44">
-        <EditableField label="Assignee">
+        <EditableField label={text("Responsable", "Assignee")}>
           {canManageAssignment ? (
             <InlineSelect value={task.assigneeId || ""} onChange={(event) => onInlineChange(task.id, { assigneeId: event.target.value || null })}>
-              <option value="">Unassigned</option>
+              <option value="">{text("Non affecte", "Unassigned")}</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>{user.fullName}</option>
               ))}
             </InlineSelect>
           ) : (
-            <p className="text-sm text-slate-700">{task.assignee?.fullName || "Unassigned"}</p>
+            <p className="text-sm text-slate-700">{task.assignee?.fullName || text("Non affecte", "Unassigned")}</p>
           )}
         </EditableField>
       </td>
       <td className="px-4 py-3 min-w-40">
-        <EditableField label="Deadline">
+        <EditableField label={text("Date limite", "Deadline")}>
           {canManageAssignment ? (
             <DatePicker
               value={task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""}
               onChange={(event) => onInlineChange(task.id, { dueDate: event.target.value || null })}
             />
           ) : (
-            <p className="text-sm text-slate-700">{task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : "No deadline"}</p>
+            <p className="text-sm text-slate-700">{task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : text("Pas de date limite", "No deadline")}</p>
           )}
         </EditableField>
       </td>

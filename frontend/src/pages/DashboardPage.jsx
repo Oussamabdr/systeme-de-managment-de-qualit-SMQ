@@ -19,6 +19,8 @@ import PageHeader from "../components/ui/PageHeader";
 import StatCard from "../components/ui/StatCard";
 import { getErrorMessage } from "../utils/http";
 import { useAuthStore } from "../store/authStore";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 import { Card, CardHeader } from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import { Select } from "../components/ui/Input";
@@ -37,8 +39,11 @@ export default function DashboardPage() {
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [period, setPeriod] = useState("month");
   const user = useAuthStore((store) => store.user);
+  const language = useUiStore((state) => state.language);
   const role = user?.role || "TEAM_MEMBER";
   const isProjectManager = role === "PROJECT_MANAGER";
+
+  const text = (fr, en) => t(language, fr, en);
 
   useEffect(() => {
     let mounted = true;
@@ -64,7 +69,7 @@ export default function DashboardPage() {
     };
   }, [role, isProjectManager, period]);
 
-  if (state.loading) return <div className="saas-card p-6">Loading dashboard...</div>;
+  if (state.loading) return <div className="saas-card p-6">{text("Chargement du tableau de bord...", "Loading dashboard...")}</div>;
   if (state.error) return <div className="saas-card p-6 text-rose-700">{state.error}</div>;
 
   const { summary, taskStatusDistribution, projectProgress, kpis } = state.data;
@@ -115,9 +120,9 @@ export default function DashboardPage() {
   const deliveryPressure = Math.min(100, Math.round((openTasks / Math.max(summary.totalTasks, 1)) * 100));
 
   const roleSubtitle = {
-    ADMIN: "Governance view with global quality and delay signals.",
-    PROJECT_MANAGER: "Execution view focused on project delivery and bottlenecks.",
-    TEAM_MEMBER: "Personal workbench view focused on task flow and priorities.",
+    ADMIN: text("Vue de gouvernance avec les signaux de qualite et de retard globaux.", "Governance view with global quality and delay signals."),
+    PROJECT_MANAGER: text("Vue d'execution focalisee sur la livraison des projets et les goulots.", "Execution view focused on project delivery and bottlenecks."),
+    TEAM_MEMBER: text("Vue personnelle focalisee sur le flux des taches et les priorites.", "Personal workbench view focused on task flow and priorities."),
   };
   const snapshotTime = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -127,23 +132,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Executive Pilotage Dashboard"
+        title={text("Tableau de bord de pilotage executive", "Executive Pilotage Dashboard")}
         subtitle={roleSubtitle[role] || roleSubtitle.TEAM_MEMBER}
       />
 
       <section className="surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Control Snapshot</p>
-            <p className="mt-1 text-sm text-slate-700">Live decision view synchronized for governance reviews and operational follow-up.</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{text("Photo de controle", "Control Snapshot")}</p>
+            <p className="mt-1 text-sm text-slate-700">{text("Vue de decision en temps reel synchronisee pour les revues de gouvernance et le suivi operationnel.", "Live decision view synchronized for governance reviews and operational follow-up.")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone="blue">Role: {role.replaceAll("_", " ")}</Badge>
+            <Badge tone="blue">{text("Role", "Role")}: {role.replaceAll("_", " ")}</Badge>
             <Badge tone={summary.delayedProjects > 0 ? "amber" : "green"}>
-              Delayed Projects: {summary.delayedProjects}
+              {text("Projets avec retard", "Delayed Projects")}: {summary.delayedProjects}
             </Badge>
-            <Badge tone={summary.delayedTasks > 0 ? "red" : "green"}>Delayed Tasks: {summary.delayedTasks}</Badge>
-            <Badge tone="slate">Updated: {snapshotTime}</Badge>
+            <Badge tone={summary.delayedTasks > 0 ? "red" : "green"}>{text("Taches avec retard", "Delayed Tasks")}: {summary.delayedTasks}</Badge>
+            <Badge tone="slate">{text("Mise a jour", "Updated")}: {snapshotTime}</Badge>
           </div>
         </div>
       </section>
@@ -152,13 +157,13 @@ export default function DashboardPage() {
         <section className="saas-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-900">Manager Time Window</p>
-              <p className="text-xs text-slate-500">Switch analysis scope for planning and steering decisions.</p>
+              <p className="text-sm font-medium text-slate-900">{text("Fenetre de temps du responsable", "Manager Time Window")}</p>
+              <p className="text-xs text-slate-500">{text("Changer l'etendue de l'analyse pour les decisions de planification et de pilotage.", "Switch analysis scope for planning and steering decisions.")}</p>
             </div>
             <Select className="w-full sm:w-56" value={period} onChange={(event) => setPeriod(event.target.value)}>
-              <option value="week">Last 7 days</option>
-              <option value="month">Last 30 days</option>
-              <option value="quarter">Last 90 days</option>
+              <option value="week">{text("7 derniers jours", "Last 7 days")}</option>
+              <option value="month">{text("30 derniers jours", "Last 30 days")}</option>
+              <option value="quarter">{text("90 derniers jours", "Last 90 days")}</option>
             </Select>
           </div>
         </section>
@@ -166,26 +171,26 @@ export default function DashboardPage() {
 
       {role === "ADMIN" ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Total Projects" value={summary.totalProjects} tone="teal" />
-          <StatCard title="Total Tasks" value={summary.totalTasks} />
-          <StatCard title="Delayed Tasks" value={summary.delayedTasks} tone="red" />
-          <StatCard title="Delayed Projects" value={summary.delayedProjects} tone="amber" />
+          <StatCard title={text("Total des projets", "Total Projects")} value={summary.totalProjects} tone="teal" />
+          <StatCard title={text("Total des taches", "Total Tasks")} value={summary.totalTasks} />
+          <StatCard title={text("Taches avec retard", "Delayed Tasks")} value={summary.delayedTasks} tone="red" />
+          <StatCard title={text("Projets avec retard", "Delayed Projects")} value={summary.delayedProjects} tone="amber" />
         </section>
       ) : null}
 
       {isProjectManager ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Managed Projects" value={summary.totalProjects} tone="teal" />
-          <StatCard title="In Progress Tasks" value={inProgressTasks} />
-          <StatCard title="Delayed Tasks" value={summary.delayedTasks} tone="red" />
-          <StatCard title="Completion Rate" value={`${globalCompletionRate}%`} tone="amber" hint={`Avg project progress: ${averageProjectProgress}%`} />
+          <StatCard title={text("Projets geres", "Managed Projects")} value={summary.totalProjects} tone="teal" />
+          <StatCard title={text("Taches en cours", "In Progress Tasks")} value={inProgressTasks} />
+          <StatCard title={text("Taches avec retard", "Delayed Tasks")} value={summary.delayedTasks} tone="red" />
+          <StatCard title={text("Taux de completion", "Completion Rate")} value={`${globalCompletionRate}%`} tone="amber" hint={text(`Progression moyenne des projets: ${averageProjectProgress}%`, `Avg project progress: ${averageProjectProgress}%`)} />
         </section>
       ) : null}
 
       {isProjectManager ? (
         <section className="grid gap-4 xl:grid-cols-[1fr_1.4fr]">
           <Card className="p-5">
-            <CardHeader title="Decision Health" subtitle="Composite steering score for management review." />
+            <CardHeader title={text("Sante de la decision", "Decision Health")} subtitle={text("Score de pilotage composite pour l'examen de direction.", "Composite steering score for management review.")} />
             {decisionHealth ? (
               <>
                 <div className="mt-2 flex items-end gap-3">
@@ -195,16 +200,16 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-500">
-                  Underperforming KPIs (&lt;80%): {decisionHealth.underperformingKpis}
+                  {text("KPIs sous-performants (<80%)", "Underperforming KPIs (<80%)")}: {decisionHealth.underperformingKpis}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-slate-500">Decision score not available.</p>
+              <p className="text-sm text-slate-500">{text("Score de decision non disponible.", "Decision score not available.")}</p>
             )}
           </Card>
 
           <Card className="p-5">
-            <CardHeader title="Recommended Steering Plan" subtitle="Prioritized actions generated from live risk signals." />
+            <CardHeader title={text("Plan de pilotage recommande", "Recommended Steering Plan")} subtitle={text("Actions prioritisees generees a partir des signaux de risque en direct.", "Prioritized actions generated from live risk signals.")} />
             <div className="space-y-2">
               {recommendedPlan.length ? (
                 recommendedPlan.map((item, index) => (
@@ -216,12 +221,12 @@ export default function DashboardPage() {
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      Source: {item.source}{item.correctiveActionId ? ` | CAPA: ${item.correctiveActionId}` : ""}
+                      {text("Origine", "Source")}: {item.source}{item.correctiveActionId ? ` | CAPA: ${item.correctiveActionId}` : ""}
                     </p>
                   </article>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No recommended action right now.</p>
+                <p className="text-sm text-slate-500">{text("Aucune action recommandee pour le moment.", "No recommended action right now.")}</p>
               )}
             </div>
           </Card>
@@ -231,34 +236,34 @@ export default function DashboardPage() {
       {isProjectManager ? (
         <section className="grid gap-4 xl:grid-cols-3">
           <Card className="p-5">
-            <CardHeader title="Delivery Pressure" subtitle="Share of task volume still open." />
+            <CardHeader title={text("Pression de livraison", "Delivery Pressure")} subtitle={text("Part du volume de taches encore ouvert.", "Share of task volume still open.")} />
             <div className="mt-2 flex items-baseline gap-2">
               <p className="text-4xl font-semibold text-slate-900">{deliveryPressure}%</p>
               <Badge tone={deliveryPressure >= 65 ? "red" : deliveryPressure >= 45 ? "amber" : "green"}>
-                {deliveryPressure >= 65 ? "High" : deliveryPressure >= 45 ? "Watch" : "Healthy"}
+                {deliveryPressure >= 65 ? text("Eleve", "High") : deliveryPressure >= 45 ? text("Surveillance", "Watch") : text("Sain", "Healthy")}
               </Badge>
             </div>
             <p className="mt-2 text-sm text-slate-500">
-              Open tasks: {openTasks} / {summary.totalTasks}
+              {text("Taches ouvertes", "Open tasks")}: {openTasks} / {summary.totalTasks}
             </p>
           </Card>
 
           <Card className="p-5">
-            <CardHeader title="Delayed Projects" subtitle="Projects that need immediate escalation." />
+            <CardHeader title={text("Projets avec retard", "Delayed Projects")} subtitle={text("Projets qui necessitent une escalade immediate.", "Projects that need immediate escalation.")} />
             <p className="text-4xl font-semibold text-slate-900">{delayedProjectsList.length}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {delayedProjectsList.slice(0, 4).map((project) => (
                 <Badge key={project.id} tone="red">{project.name}</Badge>
               ))}
-              {delayedProjectsList.length === 0 ? <p className="text-sm text-slate-500">No delayed project right now.</p> : null}
+              {delayedProjectsList.length === 0 ? <p className="text-sm text-slate-500">{text("Aucun projet avec retard pour le moment.", "No delayed project right now.")}</p> : null}
             </div>
           </Card>
 
           <Card className="p-5">
-            <CardHeader title="Execution Focus" subtitle="Projects under 60% completion or delayed." />
+            <CardHeader title={text("Foyer d'execution", "Execution Focus")} subtitle={text("Projets a moins de 60% de completion ou en retard.", "Projects under 60% completion or delayed.")} />
             <p className="text-4xl font-semibold text-slate-900">{atRiskProjects.length}</p>
             <p className="mt-2 text-sm text-slate-500">
-              Prioritize owner follow-up and CAPA review on these projects.
+              {text("Prioriser le suivi du proprietaire et l'examen de la CAPA sur ces projets.", "Prioritize owner follow-up and CAPA review on these projects.")}
             </p>
           </Card>
         </section>
@@ -266,17 +271,17 @@ export default function DashboardPage() {
 
       {role === "TEAM_MEMBER" ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="My Queue (Todo)" value={todoTasks} tone="amber" />
-          <StatCard title="In Progress" value={inProgressTasks} tone="teal" />
-          <StatCard title="Completed" value={doneTasks} />
-          <StatCard title="Overdue Alerts" value={summary.delayedTasks} tone="red" />
+          <StatCard title={text("Ma file (A faire)", "My Queue (Todo)")} value={todoTasks} tone="amber" />
+          <StatCard title={text("En cours", "In Progress")} value={inProgressTasks} tone="teal" />
+          <StatCard title={text("Termine", "Completed")} value={doneTasks} />
+          <StatCard title={text("Alertes en retard", "Overdue Alerts")} value={summary.delayedTasks} tone="red" />
         </section>
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Task Status Distribution" subtitle="Quick view of execution flow." />
+            <CardHeader title={text("Distribution du statut des taches", "Task Status Distribution")} subtitle={text("Vue rapide du flux d'execution.", "Quick view of execution flow.")} />
           </div>
           <div className="h-72 px-4 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -294,7 +299,7 @@ export default function DashboardPage() {
 
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Project Progress" subtitle="Completion percentage by project." />
+            <CardHeader title={text("Progression du projet", "Project Progress")} subtitle={text("Pourcentage de completion par projet.", "Completion percentage by project.")} />
           </div>
           <div className="h-72 px-4 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -317,16 +322,16 @@ export default function DashboardPage() {
 
       {isProjectManager ? (
         <section className="saas-card p-5">
-          <CardHeader title="Manager Action Board" subtitle="Comprehensive project-by-project control for weekly review." />
+          <CardHeader title={text("Tableau de commande des actions du responsable", "Manager Action Board")} subtitle={text("Controle complet projet par projet pour l'examen hebdomadaire.", "Comprehensive project-by-project control for weekly review.")} />
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-slate-500">
                 <tr>
-                  <th className="py-2">Project</th>
-                  <th className="py-2">Status</th>
-                  <th className="py-2">Progress</th>
-                  <th className="py-2">Done / Total</th>
-                  <th className="py-2">Priority</th>
+                  <th className="py-2">{text("Projet", "Project")}</th>
+                  <th className="py-2">{text("Statut", "Status")}</th>
+                  <th className="py-2">{text("Progression", "Progress")}</th>
+                  <th className="py-2">{text("Fait / Total", "Done / Total")}</th>
+                  <th className="py-2">{text("Priorite", "Priority")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -342,10 +347,10 @@ export default function DashboardPage() {
                           : "green";
                     const priorityLabel =
                       project.status === "Delayed" || project.progress < 50
-                        ? "Escalate"
+                        ? text("Escalade", "Escalate")
                         : project.status === "At Risk" || project.progress < 75
-                          ? "Track"
-                          : "Stable";
+                          ? text("Suivi", "Track")
+                          : text("Stable", "Stable");
 
                     return (
                       <tr key={project.id} className="border-t border-slate-200">
@@ -379,7 +384,7 @@ export default function DashboardPage() {
       <section className="grid gap-4 xl:grid-cols-3">
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Completion Gauge" subtitle="Current execution completion ratio." />
+            <CardHeader title={text("Jauge de completion", "Completion Gauge")} subtitle={text("Ratio de completion d'execution actuelle.", "Current execution completion ratio.")} />
           </div>
           <div className="h-64 px-2 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -387,7 +392,7 @@ export default function DashboardPage() {
                 innerRadius="70%"
                 outerRadius="100%"
                 barSize={14}
-                data={[{ name: "Completion", value: globalCompletionRate }]}
+                data={[{ name: text("Completion", "Completion"), value: globalCompletionRate }]}
                 startAngle={90}
                 endAngle={-270}
               >
@@ -403,7 +408,7 @@ export default function DashboardPage() {
 
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Project Status Mix" subtitle="Distribution by lifecycle status." />
+            <CardHeader title={text("Melange du statut du projet", "Project Status Mix")} subtitle={text("Distribution par statut du cycle de vie.", "Distribution by lifecycle status.")} />
           </div>
           <div className="h-64 px-4 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -421,7 +426,7 @@ export default function DashboardPage() {
 
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Workload Split" subtitle="Open versus completed task volume." />
+            <CardHeader title={text("Repartition du travail", "Workload Split")} subtitle={text("Volume de taches ouvertes par rapport aux taches terminees.", "Open versus completed task volume.")} />
           </div>
           <div className="h-64 px-4 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -443,7 +448,7 @@ export default function DashboardPage() {
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="p-0">
           <div className="p-5 pb-1">
-            <CardHeader title="Control Priority Projects" subtitle="Lowest progress projects needing intervention." />
+            <CardHeader title={text("Projets de priorite de controle", "Control Priority Projects")} subtitle={text("Projets avec la progression la plus basse necessitant une intervention.", "Lowest progress projects needing intervention.")} />
           </div>
           <div className="h-72 px-4 pb-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -468,7 +473,7 @@ export default function DashboardPage() {
         {role !== "TEAM_MEMBER" ? (
           <Card className="p-0">
             <div className="p-5 pb-1">
-              <CardHeader title="KPI Performance Bands" subtitle="Control distribution across KPI quality bands." />
+              <CardHeader title={text("Bandes de performance KPI", "KPI Performance Bands")} subtitle={text("Distribution du controle entre les bandes de qualite des KPI.", "Control distribution across KPI quality bands.")} />
             </div>
             <div className="h-72 px-4 pb-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -486,7 +491,7 @@ export default function DashboardPage() {
         ) : (
           <Card className="p-0">
             <div className="p-5 pb-1">
-              <CardHeader title="Personal Execution Focus" subtitle="Project-by-project progress on assigned scope." />
+              <CardHeader title={text("Foyer d'execution personnelle", "Personal Execution Focus")} subtitle={text("Progression du projet pour le domaine assigne.", "Project-by-project progress on assigned scope.")} />
             </div>
             <div className="h-72 px-4 pb-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -505,16 +510,16 @@ export default function DashboardPage() {
 
       {role !== "TEAM_MEMBER" ? (
         <section className="saas-card p-5">
-          <CardHeader title={isProjectManager ? "KPI Indicators (Manager View)" : "KPI Indicators"} subtitle={isProjectManager ? "Process-level targets, to support project steering and CAPA prioritization." : "Process-level targets and attainment."} />
+          <CardHeader title={isProjectManager ? text("Indicateurs KPI (Vue responsable)", "KPI Indicators (Manager View)") : text("Indicateurs KPI", "KPI Indicators")} subtitle={isProjectManager ? text("Cibles au niveau du processus, pour soutenir le pilotage du projet et la prioritarisation des CAPA.", "Process-level targets, to support project steering and CAPA prioritization.") : text("Cibles et dotations au niveau du processus.", "Process-level targets and attainment.")} />
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-slate-500">
                 <tr>
-                  <th className="py-2">Process</th>
-                  <th className="py-2">Indicator</th>
-                  <th className="py-2">Current</th>
-                  <th className="py-2">Target</th>
-                  <th className="py-2">Achievement</th>
+                  <th className="py-2">{text("Processus", "Process")}</th>
+                  <th className="py-2">{text("Indicateur", "Indicator")}</th>
+                  <th className="py-2">{text("Actuel", "Current")}</th>
+                  <th className="py-2">{text("Cible", "Target")}</th>
+                  <th className="py-2">{text("Realisation", "Achievement")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -537,9 +542,9 @@ export default function DashboardPage() {
         </section>
       ) : (
         <section className="saas-card p-5">
-          <CardHeader title="Execution Hint" subtitle="Keep your personal board healthy and predictable." />
+          <CardHeader title={text("Conseil d'execution", "Execution Hint")} subtitle={text("Gardez votre tableau personnel sain et previsible.", "Keep your personal board healthy and predictable.")} />
           <p className="mt-2 text-sm text-slate-600">
-            Focus on moving tasks from Todo to Done and keep overdue alerts at zero.
+            {text("Concentrez-vous sur le deplacement des taches de A faire a Fait et gardez les alertes en retard a zero.", "Focus on moving tasks from Todo to Done and keep overdue alerts at zero.")}
           </p>
         </section>
       )}

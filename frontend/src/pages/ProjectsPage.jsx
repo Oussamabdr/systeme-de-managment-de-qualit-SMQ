@@ -12,6 +12,8 @@ import { useAuthStore } from "../store/authStore";
 import ProjectProgress from "../components/projects/ProjectProgress";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
+import { useUiStore } from "../store/uiStore";
+import { t } from "../utils/i18n";
 
 const initialForm = {
   name: "",
@@ -33,6 +35,8 @@ export default function ProjectsPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
+  const language = useUiStore((state) => state.language);
+  const text = (fr, en) => t(language, fr, en);
 
   const load = async () => {
     try {
@@ -80,7 +84,7 @@ export default function ProjectsPage() {
       setIsSubmitting(true);
       await api.post("/projects", form);
       setForm(initialForm);
-      setSuccessMessage("Projet cree avec succes !");
+      setSuccessMessage(text("Projet cree avec succes !", "Project created successfully!"));
       setTimeout(() => setSuccessMessage(""), 3000);
       load();
     } catch (err) {
@@ -97,16 +101,22 @@ export default function ProjectsPage() {
   const applyProjectTemplate = (template) => {
     if (template === "certification") {
       setForm({
-        name: "ISO 9001 Certification Readiness",
-        description: "Coordinate gap closure, internal audit preparation, and management review milestones for certification readiness.",
+        name: text("Preparation a la certification ISO 9001", "ISO 9001 Certification Readiness"),
+        description: text(
+          "Coordonner la fermeture des ecarts, la preparation des audits internes et les jalons de revue de direction.",
+          "Coordinate gap closure, internal audit preparation, and management review milestones for certification readiness.",
+        ),
       });
       return;
     }
 
     if (template === "supplier") {
       setForm({
-        name: "Supplier Quality Improvement Program",
-        description: "Improve supplier conformity through audit planning, corrective actions, and performance monitoring KPIs.",
+        name: text("Programme d'amelioration fournisseur", "Supplier Quality Improvement Program"),
+        description: text(
+          "Ameliorer la conformite fournisseur via audits, actions correctives et suivi des indicateurs.",
+          "Improve supplier conformity through audit planning, corrective actions, and performance monitoring KPIs.",
+        ),
       });
       return;
     }
@@ -163,15 +173,15 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Program Portfolio" subtitle="Steer delivery performance, quality risk, and cross-process alignment." />
+      <PageHeader title={text("Portefeuille de programmes", "Program Portfolio")} subtitle={text("Orienter la performance de livraison, le risque de qualite et l'alignement inter-processus.", "Steer delivery performance, quality risk, and cross-process alignment.")} />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <Card className="p-0 overflow-hidden">
           <div className="px-5 pt-5">
-            <CardHeader title="Project Portfolio" subtitle="High-level quality program progress overview." />
+            <CardHeader title={text("Portefeuille de projets", "Project Portfolio")} subtitle={text("Aperçu de la progression du programme qualite de haut niveau.", "High-level quality program progress overview.")} />
           </div>
           {error ? <p className="px-5 pb-4 text-sm text-rose-700">{error}</p> : null}
-          <Table headers={["Project", "Health", "Processes", "Progress", "Actions"]}>
+          <Table headers={[text("Projet", "Project"), text("Sante", "Health"), text("Processus", "Processes"), text("Progression", "Progress"), text("Actions", "Actions")]}>
             {projects.map((project) => {
               return (
                 <tr key={project.id}>
@@ -238,16 +248,16 @@ export default function ProjectsPage() {
         <div className="space-y-4">
           {canManage ? (
             <Card className="p-5">
-              <CardHeader title="Create Project" subtitle="Add a new certification initiative." />
+              <CardHeader title={text("Creer un projet", "Create Project")} subtitle={text("Ajouter une initiative de certification.", "Add a new certification initiative.")} />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("certification")}>
-                  Use Certification Template
+                  {text("Modele certification", "Use Certification Template")}
                 </Button>
                 <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("supplier")}>
-                  Use Supplier Template
+                  {text("Modele fournisseur", "Use Supplier Template")}
                 </Button>
                 <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("reset")}>
-                  Reset
+                  {text("Reinitialiser", "Reset")}
                 </Button>
               </div>
               <form className="mt-3 space-y-3" onSubmit={createProject}>
@@ -255,7 +265,7 @@ export default function ProjectsPage() {
                 <FormErrors errors={errors} />
 
                 <FormField
-                  label="Project Name"
+                  label={text("Nom du projet", "Project Name")}
                   name="name"
                   type="text"
                   value={form.name}
@@ -263,13 +273,13 @@ export default function ProjectsPage() {
                   onBlur={() => markFieldTouched("name")}
                   error={errors.name}
                   touched={touched.name}
-                  placeholder="e.g. Internal Audit Readiness 2026"
-                  helpText="Minimum 2 characters"
+                  placeholder={text("ex. Preparation audit interne 2026", "e.g. Internal Audit Readiness 2026")}
+                  helpText={text("Minimum 2 caracteres", "Minimum 2 characters")}
                   required
                 />
 
                 <FormField
-                  label="Description"
+                  label={text("Description", "Description")}
                   name="description"
                   type="textarea"
                   value={form.description}
@@ -277,12 +287,15 @@ export default function ProjectsPage() {
                   onBlur={() => markFieldTouched("description")}
                   error={errors.description}
                   touched={touched.description}
-                  placeholder="State objective, scope, and expected quality outcomes."
-                  helpText="Max 500 characters"
+                  placeholder={text(
+                    "Indiquer objectif, perimetre et resultats attendus.",
+                    "State objective, scope, and expected quality outcomes.",
+                  )}
+                  helpText={text("Max 500 caracteres", "Max 500 characters")}
                 />
 
                 <Button className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save Project"}
+                  {isSubmitting ? text("Enregistrement...", "Saving...") : text("Enregistrer le projet", "Save Project")}
                 </Button>
               </form>
             </Card>
@@ -290,7 +303,7 @@ export default function ProjectsPage() {
 
           {canManage ? (
             <Card className="p-5">
-              <CardHeader title="Assign Processes" subtitle="Map controlled processes to a selected project." />
+              <CardHeader title={text("Assigner les processus", "Assign Processes")} subtitle={text("Mapper les processus controles a un projet selectionne.", "Map controlled processes to a selected project.")} />
               <Select className="mt-3" value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>{project.name}</option>
