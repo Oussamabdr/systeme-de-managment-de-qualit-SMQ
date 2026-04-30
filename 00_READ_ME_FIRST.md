@@ -40,7 +40,7 @@ Render will read your `render.yaml` file automatically and deploy everything.
 ✅ Your render.yaml is configured  
 ✅ Your frontend builds (tested)  
 ✅ Your backend is ready (tested)  
-✅ GitHub Actions will auto-deploy future updates  
+✅ GitHub Actions will auto-deploy future updates
 
 Everything is prepared. You just need to connect Render to GitHub.
 
@@ -49,6 +49,7 @@ Everything is prepared. You just need to connect Render to GitHub.
 ## After You Deploy
 
 You'll get 2 URLs:
+
 - Backend API: `https://iso-qms-api-xxxxx.render.com`
 - Frontend App: `https://iso-qms-frontend-xxxxx.render.com`
 
@@ -86,6 +87,6 @@ https://render.com
 
 ---
 
-*Questions? See detailed guides in this folder.*  
-*Urgent issues? Check FINAL_SETUP_INSTRUCTIONS.md*  
-*Everything else? Already done.*
+_Questions? See detailed guides in this folder._  
+_Urgent issues? Check FINAL_SETUP_INSTRUCTIONS.md_  
+_Everything else? Already done._

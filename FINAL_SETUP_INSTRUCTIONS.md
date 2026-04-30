@@ -16,32 +16,41 @@ After this one-time setup, **all future pushes to GitHub will auto-redeploy auto
 ## COMPLETE SETUP IN 6 STEPS
 
 ### Step 1: Create Free Render Account
+
 Go to: https://render.com
+
 - Sign up or log in with GitHub
 - Authorize Render to access your GitHub account
 
 ### Step 2: Go to Dashboard
+
 After login, you're at: https://dashboard.render.com
 
 ### Step 3: Create New Blueprint
+
 Look for blue **"New +"** button in top right
+
 - Click it
 - Select **"Blueprint"** from dropdown
 
 ### Step 4: Connect Repository
+
 - Click **"Connect Repository"**
 - Find your repo: `iso` (or whatever it's named)
 - Click to select it
 - Click **"Connect"**
 
 ### Step 5: Review Configuration
+
 Render will show services from your `render.yaml`:
+
 - `iso-qms-api` (backend web service)
 - `iso-qms-frontend` (frontend static site)
 
 Review and click **"Deploy"**
 
 ### Step 6: Wait for Deployment
+
 - Watch the build logs (4-6 minutes)
 - When done, you get TWO URLs:
   - Backend: `https://iso-qms-api-xxxxx.render.com`
@@ -65,6 +74,7 @@ Review and click **"Deploy"**
 ## After First Deployment
 
 From now on:
+
 - Any push to `main` branch automatically triggers GitHub Actions
 - GitHub Actions notifies Render
 - Render auto-redeploys your services
@@ -75,21 +85,25 @@ From now on:
 ## Troubleshooting
 
 **"I don't see the New + button"**
+
 - Make sure you're logged in
 - Try refreshing page
 - You might need to accept Render's terms
 
 **"Blueprint option not visible"**
+
 - Update browser
 - Try different browser
 - Check you're on dashboard.render.com
 
 **"Deployment fails in Render"**
+
 - Check build logs in Render dashboard
 - Most common: DATABASE_URL not set
 - Render will show exact error
 
 **"Frontend URL shows blank page"**
+
 - Wait 1-2 more minutes
 - Hard refresh (Ctrl+Shift+Delete)
 - Check Network tab in DevTools for API errors
