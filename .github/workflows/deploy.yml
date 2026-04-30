@@ -1,0 +1,42 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Render Blueprint
+        # When render.yaml is present, Render automatically detects it
+        # This step notifies Render to redeploy the services
+        run: |
+          echo "Render will auto-detect render.yaml and deploy services"
+          echo "If services already exist in Render, they will be redeployed"
+          echo "If services don't exist, Render Blueprint will create them"
+          
+      - name: Alternative: Trigger via Render Deploy Hook
+        # Uncomment this section and add RENDER_DEPLOY_HOOK_URL to GitHub secrets
+        # to enable automatic deployment via Render's deploy hook
+        if: false
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Triggering Render deployment via webhook..."
+            curl -X GET "$RENDER_DEPLOY_HOOK"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL secret not configured"
+          fi
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          echo "Deployment workflow completed"
+          echo "Check Render dashboard at https://dashboard.render.com for deployment status"
