@@ -17,3 +17,22 @@ services:
         value: 1d
       - key: CORS_ORIGIN
         sync: false
+
+  - type: static
+    name: iso-qms-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: iso-qms-api
+          property: url
