@@ -5,6 +5,7 @@
 ---
 
 ## Backend Requirements
+
 - ✅ Node.js application exists at `/backend`
 - ✅ `package.json` with all dependencies defined
 - ✅ `.env.example` template provided
@@ -14,6 +15,7 @@
 - ✅ Port: 3000 (default for render.yaml)
 
 ## Frontend Requirements
+
 - ✅ Vue.js + TypeScript app at `/frontend`
 - ✅ Build command: `npm run build`
 - ✅ Output directory: `dist/`
@@ -22,6 +24,7 @@
 - ✅ Static site ready for hosting
 
 ## GitHub Requirements
+
 - ✅ Repository: `systeme-de-managment-de-qualit-SMQ`
 - ✅ Branch: `main`
 - ✅ All code committed and pushed
@@ -29,6 +32,7 @@
 - ✅ No sensitive data in repo (using .env)
 
 ## Render Configuration
+
 - ✅ `render.yaml` exists in root
 - ✅ Backend service configured (iso-qms-api)
 - ✅ Frontend service configured (iso-qms-frontend)
@@ -39,6 +43,7 @@
 - ✅ Migrations auto-run on deploy
 
 ## Documentation
+
 - ✅ 00_READ_ME_FIRST.md created
 - ✅ DEPLOY_TO_RENDER.md with full guide
 - ✅ Troubleshooting section included
@@ -46,6 +51,7 @@
 - ✅ All docs committed to GitHub
 
 ## GitHub Actions
+
 - ✅ `.github/workflows/` configured
 - ✅ Auto-deploy on push to main
 - ✅ Workflow tested
@@ -55,6 +61,7 @@
 ## DEPLOYMENT STEPS
 
 ### For you (User):
+
 1. Go to https://render.com
 2. Sign in with GitHub
 3. Click "New +" → "Blueprint"
@@ -64,6 +71,7 @@
 7. Test your live app
 
 ### What Render does:
+
 1. Reads `render.yaml` from your repo
 2. Creates backend service (Node.js + PostgreSQL)
 3. Installs dependencies
@@ -79,6 +87,7 @@
 ## AFTER DEPLOYMENT
 
 Your live app will have:
+
 - ✅ Backend API at `https://iso-qms-api-xxxxx.onrender.com`
 - ✅ Frontend at `https://iso-qms-frontend-xxxxx.onrender.com`
 - ✅ PostgreSQL database managed by Render
@@ -114,6 +123,7 @@ Your live app will have:
 ## SUPPORT
 
 If deployment fails:
+
 1. Check Render logs (click service → Logs tab)
 2. Verify environment variables are set
 3. Check `render.yaml` is valid
