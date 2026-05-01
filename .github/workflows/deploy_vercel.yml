@@ -8,6 +8,8 @@ jobs:
   vercel-deploy:
     name: Deploy frontend to Vercel
     runs-on: ubuntu-latest
+    # Only run this job if the required Vercel secrets are present
+    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_PROJECT_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
