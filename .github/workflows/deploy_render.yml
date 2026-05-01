@@ -1,0 +1,40 @@
+name: Trigger Render Deploys
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger-deploys:
+    name: Trigger Render Deploys
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend deploy on Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_API }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$SERVICE_ID" ]; then
+            echo "RENDER_API_KEY or SERVICE_ID missing — set secrets.RENDER_API_KEY and secrets.RENDER_SERVICE_ID_API";
+            exit 1;
+          fi
+          echo "Triggering deploy for service $SERVICE_ID"
+          curl -s -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+
+      - name: Trigger frontend deploy on Render (optional)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$SERVICE_ID" ]; then
+            echo "Skipping frontend deploy (missing secrets.RENDER_SERVICE_ID_FRONTEND).";
+            exit 0;
+          fi
+          echo "Triggering deploy for frontend service $SERVICE_ID"
+          curl -s -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}'
