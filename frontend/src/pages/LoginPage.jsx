@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
-import { t } from "../utils/i18n";
+import { t, languageLabels } from "../utils/i18n";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
   const language = useUiStore((state) => state.language);
+  const setLanguage = useUiStore((state) => state.setLanguage);
 
   const text = (fr, en) => t(language, fr, en);
 
@@ -46,6 +47,19 @@ export default function LoginPage() {
         </Card>
 
         <Card className="p-8">
+          <div className="flex justify-end">
+            <label className="sr-only">Language</label>
+            <select
+              aria-label="Language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="rounded-md border px-2 py-1 text-sm"
+            >
+              <option value="fr">{languageLabels.fr}</option>
+              <option value="en">{languageLabels.en}</option>
+              <option value="bi">{languageLabels.bi}</option>
+            </select>
+          </div>
           <CardHeader title={text("Se connecter", "Sign in")} subtitle={text("Accedez a votre espace de travail.", "Access your workspace.")} />
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div>
