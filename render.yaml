@@ -18,11 +18,12 @@ services:
       - key: CORS_ORIGIN
         sync: false
 
-  - type: static_site
+  - type: web
+    runtime: static
     name: iso-qms-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     headers:
       - path: /index.html
         name: Cache-Control
