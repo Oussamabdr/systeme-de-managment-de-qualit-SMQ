@@ -1,0 +1,11 @@
+name = "qms-backend-worker"
+type = "javascript"
+# Replace with your Cloudflare account id
+account_id = "REPLACE_WITH_ACCOUNT_ID"
+
+[build]
+command = ""
+
+[site]
+; Optional: point to a static output dir for Pages
+; bucket = "frontend/dist"
