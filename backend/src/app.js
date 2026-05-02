@@ -39,6 +39,11 @@ app.get("/", (_req, res) => {
 	});
 });
 
+// Public health endpoint that does not require DB or authentication.
+app.get("/public-health", (_req, res) => {
+	res.json({ success: true, message: "QMS public health OK" });
+});
+
 app.use("/api", apiRoutes);
 app.use(notFound);
 app.use(errorHandler);
