@@ -1,17 +1,24 @@
-const serverless = require("serverless-http");
+module.exports = async (req, res) => {
+  try {
+    // For health check or simple test, return status without loading full app
+    if (req.url === "/api/health" || req.url === "/api") {
+      return res.status(200).json({ success: true, message: "QMS API online", timestamp: new Date().toISOString() });
+    }
 
-let app;
-try {
-  app = require("../backend/src/app");
-} catch (error) {
-  console.error("Failed to load app:", error);
-  // Fallback app if main app fails to load
-  const express = require("express");
-  app = express();
-  app.use(express.json());
-  app.all("*", (req, res) => {
-    res.status(503).json({ success: false, message: "API initializing, please retry", error: error?.message });
-  });
-}
+    // For other endpoints, load and use the full app
+    const serverless = require("serverless-http");
+    let app;
+    try {
+      app = require("../backend/src/app");
+    } catch (error) {
+      console.error("Failed to load app:", error.message);
+      return res.status(503).json({ success: false, message: "API unavailable", error: error.message });
+    }
 
-module.exports = serverless(app);
+    const handler = serverless(app);
+    return handler(req, res);
+  } catch (error) {
+    console.error("Handler error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+  }
+};
