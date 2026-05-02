@@ -6,7 +6,6 @@ services:
     rootDir: backend
     buildCommand: npm install && npm run db:generate
     startCommand: npm start
-    preDeployCommand: npx prisma migrate deploy && npm run db:seed
     envVars:
       - key: NODE_VERSION
         value: 20
