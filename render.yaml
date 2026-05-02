@@ -33,7 +33,4 @@ services:
         value: public, max-age=31536000, immutable
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: iso-qms-api
-          property: url
+        sync: false
