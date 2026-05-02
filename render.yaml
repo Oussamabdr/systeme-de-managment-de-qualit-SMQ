@@ -1,6 +1,7 @@
 services:
   - type: web
     name: iso-qms-api
+    plan: free
     env: node
     rootDir: backend
     buildCommand: npm install && npm run db:generate
@@ -21,6 +22,7 @@ services:
   - type: web
     runtime: static
     name: iso-qms-frontend
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
