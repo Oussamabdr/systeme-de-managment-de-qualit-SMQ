@@ -8,7 +8,10 @@ echo ""
 
 # 1. Check git status
 echo "✓ Git Repository Status:"
-cd "$(dirname "$0")"
+# Move to workspace root even when executed from scripts/
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 if [ -d .git ]; then
   echo "  - Latest commits:"
   git log --oneline -3

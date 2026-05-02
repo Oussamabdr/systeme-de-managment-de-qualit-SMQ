@@ -78,7 +78,7 @@ try {
     
     Write-Host ""
 
-    # 5. Verify required files exist
+    # 5. Verify required runtime/deployment files exist
     Write-Host "5. Checking required deployment files..." -ForegroundColor Yellow
     
     $files = @(
@@ -89,8 +89,7 @@ try {
         "frontend/vite.config.js",
         "frontend/src/store/uiStore.js",
         "frontend/src/utils/i18n.js",
-        "DEPLOY_NOW.md",
-        "DEPLOYMENT_CHECKLIST.md",
+        "README.md",
         "DEPLOYMENT_GUIDE.md"
     )
 
