@@ -9,18 +9,12 @@ const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
-const allowedOrigins = env.corsOrigin
-	? env.corsOrigin.split(",").map((origin) => origin.trim()).filter(Boolean)
-	: [];
-
+// CORS configuration: allow all origins for serverless deployment
 const corsOptions = {
-	origin(origin, callback) {
-		if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-			return callback(null, true);
-		}
-		return callback(new Error("Not allowed by CORS"));
-	},
+	origin: true, // Allow all origins
 	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
@@ -37,11 +31,6 @@ app.get("/", (_req, res) => {
 		apiRoot: "/api",
 		health: "/api/health",
 	});
-});
-
-// Public health endpoint that does not require DB or authentication.
-app.get("/public-health", (_req, res) => {
-	res.json({ success: true, message: "QMS public health OK" });
 });
 
 app.use("/api", apiRoutes);
