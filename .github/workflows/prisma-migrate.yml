@@ -1,0 +1,25 @@
+name: Prisma Migrate (manual)
+on:
+  workflow_dispatch:
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install backend deps
+        run: |
+          cd backend
+          npm ci
+      - name: Run Prisma migrate deploy
+        working-directory: backend
+        run: |
+          npx prisma migrate deploy --schema=prisma/schema.prisma
+          npx prisma generate --schema=prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
