@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
   PieChart,
@@ -38,6 +39,7 @@ const tooltipStyle = {
 export default function DashboardPage() {
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [period, setPeriod] = useState("month");
+  const navigate = useNavigate();
   const user = useAuthStore((store) => store.user);
   const language = useUiStore((state) => state.language);
   const role = user?.role || "TEAM_MEMBER";
@@ -72,7 +74,7 @@ export default function DashboardPage() {
   if (state.loading) return <div className="saas-card p-6">{text("Chargement du tableau de bord...", "Loading dashboard...")}</div>;
   if (state.error) return <div className="saas-card p-6 text-rose-700">{state.error}</div>;
 
-  const { summary, taskStatusDistribution, projectProgress, kpis } = state.data;
+  const { summary, taskStatusDistribution, projectProgress, kpis, requirementAssessments } = state.data;
   const pilotage = state.data?.pilotage;
   const recommendedPlan = pilotage?.recommendedPlan || [];
   const decisionHealth = pilotage?.decisionHealth || null;
@@ -118,6 +120,9 @@ export default function DashboardPage() {
     ? Math.round(projectProgress.reduce((sum, project) => sum + project.progress, 0) / projectProgress.length)
     : 0;
   const deliveryPressure = Math.min(100, Math.round((openTasks / Math.max(summary.totalTasks, 1)) * 100));
+  const processAssessmentRows = requirementAssessments?.rows || [];
+  const averageAssessmentScore = requirementAssessments?.averageScore || 0;
+  const veracityDistribution = requirementAssessments?.veracityDistribution || [];
 
   const roleSubtitle = {
     ADMIN: text("Vue de gouvernance avec les signaux de qualite et de retard globaux.", "Governance view with global quality and delay signals."),
@@ -319,6 +324,107 @@ export default function DashboardPage() {
           </div>
         </Card>
       </section>
+
+      {role !== "TEAM_MEMBER" ? (
+        <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <Card className="p-5">
+            <CardHeader
+              title={text("Maturite des exigences ISO", "ISO Requirements Maturity")}
+              subtitle={text("Moyenne globale des taux de véracité/conformité saisis par processus.", "Global average of requirement truth/compliance rates entered per process.")}
+            />
+            <div className="mt-2 flex items-end gap-3">
+              <p className="text-5xl font-semibold text-slate-900">{averageAssessmentScore}%</p>
+              <Badge tone={averageAssessmentScore >= 80 ? "green" : averageAssessmentScore >= 60 ? "amber" : "red"}>
+                {averageAssessmentScore >= 80 ? text("Maitrise", "Controlled") : averageAssessmentScore >= 60 ? text("A renforcer", "Needs Work") : text("Critique", "Critical")}
+              </Badge>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              {text("Processus evalúes", "Assessed processes")}: {processAssessmentRows.filter((row) => row.assessedRequirements > 0).length} / {processAssessmentRows.length}
+            </p>
+          </Card>
+
+          <Card className="p-0">
+            <div className="p-5 pb-1">
+              <CardHeader
+                title={text("Taux global par processus", "Overall Score by Process")}
+                subtitle={text("Repérez les processus les moins alignés sur les exigences ISO.", "Identify the processes least aligned with ISO requirements.")}
+              />
+            </div>
+            <div className="h-72 px-4 pb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={processAssessmentRows} onClick={(payload) => {
+                  const processId = payload?.activePayload?.[0]?.payload?.processId;
+                  if (processId) {
+                    navigate(`/processes/${processId}`);
+                  }
+                }}>
+                  <CartesianGrid strokeDasharray="2 4" stroke="#e2e8f0" />
+                  <XAxis dataKey="processName" hide />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="overallScore" fill="#0f766e" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {role !== "TEAM_MEMBER" ? (
+        <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <Card className="p-5">
+            <CardHeader
+              title={text("Répartition de la véracité", "Veracity Distribution")}
+              subtitle={text("Lecture qualitative globale des fiches d'exigences remplies.", "Global qualitative reading of completed requirement sheets.")}
+            />
+            <div className="mt-3 space-y-2">
+              {veracityDistribution.map((item) => (
+                <div key={item.value} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+                  <span className="text-sm text-slate-700">{item.label}</span>
+                  <Badge tone={item.value === "TRUE" ? "green" : item.value === "RATHER_TRUE" ? "blue" : item.value === "RATHER_FALSE" ? "amber" : "red"}>
+                    {item.count}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-0">
+            <div className="p-5 pb-1">
+              <CardHeader
+                title={text("Niveaux de véracité", "Veracity Levels")}
+                subtitle={text("Distribution des niveaux Faux à Vrai dans les évaluations.", "Distribution of levels from False to True across evaluations.")}
+              />
+            </div>
+            <div className="h-72 px-4 pb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={veracityDistribution}>
+                  <CartesianGrid strokeDasharray="2 4" stroke="#e2e8f0" />
+                  <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                    {veracityDistribution.map((item) => (
+                      <Cell
+                        key={item.value}
+                        fill={
+                          item.value === "TRUE"
+                            ? "#16a34a"
+                            : item.value === "RATHER_TRUE"
+                              ? "#0f766e"
+                              : item.value === "RATHER_FALSE"
+                                ? "#d97706"
+                                : "#dc2626"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </section>
+      ) : null}
 
       {isProjectManager ? (
         <section className="saas-card p-5">
@@ -533,6 +639,63 @@ export default function DashboardPage() {
                       <Badge tone={row.achievement >= 90 ? "green" : row.achievement >= 70 ? "amber" : "red"}>
                         {row.achievement}%
                       </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {role !== "TEAM_MEMBER" ? (
+        <section className="saas-card p-5">
+          <CardHeader
+            title={text("Synthese des exigences par processus", "Requirement Summary by Process")}
+            subtitle={text("Suivi du taux global et du nombre d'exigences renseignées pour chaque processus.", "Track the overall score and number of completed requirement entries for each process.")}
+          />
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-slate-500">
+                <tr>
+                  <th className="py-2">{text("Processus", "Process")}</th>
+                  <th className="py-2">{text("Taux global", "Overall Score")}</th>
+                  <th className="py-2">{text("Véracité dominante", "Dominant Veracity")}</th>
+                  <th className="py-2">{text("Exigences remplies", "Completed Requirements")}</th>
+                  <th className="py-2">{text("Derniere mise a jour", "Last Update")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processAssessmentRows.map((row) => (
+                  <tr key={row.processId} className="border-t border-slate-200">
+                    <td className="py-2">
+                      <Link className="font-medium text-emerald-700 hover:text-emerald-800" to={`/processes/${row.processId}`}>
+                        {row.processName}
+                      </Link>
+                    </td>
+                    <td className="py-2">
+                      <Badge tone={row.overallScore >= 80 ? "green" : row.overallScore >= 60 ? "amber" : "red"}>
+                        {row.overallScore}%
+                      </Badge>
+                    </td>
+                    <td className="py-2">
+                      <Badge
+                        tone={
+                          row.dominantVeracityLevel === "TRUE"
+                            ? "green"
+                            : row.dominantVeracityLevel === "RATHER_TRUE"
+                              ? "blue"
+                              : row.dominantVeracityLevel === "RATHER_FALSE"
+                                ? "amber"
+                                : "red"
+                        }
+                      >
+                        {row.dominantVeracityLabel}
+                      </Badge>
+                    </td>
+                    <td className="py-2">{row.assessedRequirements} / {row.totalRequirements}</td>
+                    <td className="py-2 text-slate-600">
+                      {row.lastUpdatedAt ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.lastUpdatedAt)) : text("Jamais", "Never")}
                     </td>
                   </tr>
                 ))}

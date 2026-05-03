@@ -27,8 +27,17 @@ async function findProcessesForOverview(where) {
   return prisma.process.findMany({
     where,
     select: {
+      id: true,
       name: true,
       indicators: true,
+      requirementAssessments: {
+        select: {
+          requirementCode: true,
+          score: true,
+          veracityLevel: true,
+          updatedAt: true,
+        },
+      },
     },
   });
 }

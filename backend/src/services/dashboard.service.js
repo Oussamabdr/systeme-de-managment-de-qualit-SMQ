@@ -228,6 +228,78 @@ function buildDecisionPlan({ criticalIssues, openCorrectiveActions }) {
     .slice(0, 8);
 }
 
+function buildRequirementAssessmentOverview(processes) {
+  const veracityLabels = {
+    FALSE: "Faux",
+    RATHER_FALSE: "Plutôt faux",
+    RATHER_TRUE: "Plutôt vrai",
+    TRUE: "Vrai",
+  };
+  const veracityTotals = {
+    FALSE: 0,
+    RATHER_FALSE: 0,
+    RATHER_TRUE: 0,
+    TRUE: 0,
+  };
+
+  const rows = processes.map((process) => {
+    const requirements = process.requirementAssessments || [];
+    for (const requirement of requirements) {
+      if (veracityTotals[requirement.veracityLevel] !== undefined) {
+        veracityTotals[requirement.veracityLevel] += 1;
+      }
+    }
+    const perProcessVeracity = {
+      FALSE: 0,
+      RATHER_FALSE: 0,
+      RATHER_TRUE: 0,
+      TRUE: 0,
+    };
+    for (const requirement of requirements) {
+      if (perProcessVeracity[requirement.veracityLevel] !== undefined) {
+        perProcessVeracity[requirement.veracityLevel] += 1;
+      }
+    }
+    const totalScore = requirements.reduce((sum, item) => sum + Number(item.score || 0), 0);
+    const overallScore = requirements.length > 0
+      ? Math.round((totalScore / requirements.length) * 10) / 10
+      : 0;
+    const dominantVeracityLevel = Object.entries(perProcessVeracity)
+      .sort((a, b) => b[1] - a[1])[0]?.[1] > 0
+      ? Object.entries(perProcessVeracity).sort((a, b) => b[1] - a[1])[0][0]
+      : "FALSE";
+
+    return {
+      processId: process.id,
+      processName: process.name,
+      overallScore,
+      dominantVeracityLevel,
+      dominantVeracityLabel: veracityLabels[dominantVeracityLevel],
+      assessedRequirements: requirements.filter((item) => Number(item.score || 0) > 0).length,
+      totalRequirements: 7,
+      lastUpdatedAt: requirements.reduce((latest, item) => {
+        if (!item.updatedAt) return latest;
+        return !latest || new Date(item.updatedAt) > new Date(latest) ? item.updatedAt : latest;
+      }, null),
+    };
+  });
+
+  const averageScore = rows.length
+    ? Math.round((rows.reduce((sum, item) => sum + item.overallScore, 0) / rows.length) * 10) / 10
+    : 0;
+
+  return {
+    averageScore,
+    veracityDistribution: [
+      { value: "FALSE", label: "Faux", count: veracityTotals.FALSE },
+      { value: "RATHER_FALSE", label: "Plutôt faux", count: veracityTotals.RATHER_FALSE },
+      { value: "RATHER_TRUE", label: "Plutôt vrai", count: veracityTotals.RATHER_TRUE },
+      { value: "TRUE", label: "Vrai", count: veracityTotals.TRUE },
+    ],
+    rows: rows.sort((a, b) => a.overallScore - b.overallScore),
+  };
+}
+
 async function getOverview(period) {
   const key = cacheKey("overview", period);
   const cached = readCache(key);
@@ -287,6 +359,7 @@ async function getOverview(period) {
     projectProgress,
     taskStatusDistribution: buildStatusDistribution(tasks),
     kpis: kpiRows,
+    requirementAssessments: buildRequirementAssessmentOverview(processes),
     criticalIssues,
     correctiveActions: buildCorrectiveActionSummary(openCorrectiveActions),
     alerts: {
@@ -359,6 +432,16 @@ async function getMyOverview(userId, period) {
     projectProgress,
     taskStatusDistribution: buildStatusDistribution(tasks),
     kpis: [],
+    requirementAssessments: {
+      averageScore: 0,
+      veracityDistribution: [
+        { value: "FALSE", label: "Faux", count: 0 },
+        { value: "RATHER_FALSE", label: "Plutôt faux", count: 0 },
+        { value: "RATHER_TRUE", label: "Plutôt vrai", count: 0 },
+        { value: "TRUE", label: "Vrai", count: 0 },
+      ],
+      rows: [],
+    },
     criticalIssues,
     correctiveActions: buildCorrectiveActionSummary(openCorrectiveActions),
     alerts: {

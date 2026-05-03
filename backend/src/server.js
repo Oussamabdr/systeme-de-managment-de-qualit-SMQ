@@ -26,12 +26,18 @@ async function shutdown(signal) {
 }
 
 async function startServer() {
-  await startupDbHealthCheck();
-
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, () => {
     // Startup log intentionally concise for local and containerized runs.
     console.log(`QMS API listening on port ${env.port}`);
   });
+
+  server.on("error", (error) => {
+    console.error("Server listen error", error);
+    process.exit(1);
+  });
+
+  // Start accepting requests immediately; remote DB checks can complete in parallel.
+  startupDbHealthCheck();
 }
 
 process.on("SIGINT", () => shutdown("SIGINT"));

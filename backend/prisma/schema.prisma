@@ -70,6 +70,13 @@ enum NonConformityStatus {
   CLOSED
 }
 
+enum VeracityLevel {
+  FALSE
+  RATHER_FALSE
+  RATHER_TRUE
+  TRUE
+}
+
 model User {
   id           String     @id @default(cuid())
   fullName     String
@@ -117,8 +124,25 @@ model Process {
   tasks             Task[]
   correctiveActions CorrectiveAction[]
   documents         Document[]
+  requirementAssessments ProcessRequirementAssessment[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+}
+
+model ProcessRequirementAssessment {
+  id              String   @id @default(cuid())
+  processId       String
+  requirementCode String
+  requirementName String
+  score           Float    @default(0)
+  veracityLevel   VeracityLevel @default(FALSE)
+  notes           String?
+  process         Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([processId, requirementCode])
+  @@index([processId])
 }
 
 model Kpi {
