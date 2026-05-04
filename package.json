@@ -16,5 +16,8 @@
   "type": "commonjs",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "serverless-http": "^4.0.0"
   }
 }
