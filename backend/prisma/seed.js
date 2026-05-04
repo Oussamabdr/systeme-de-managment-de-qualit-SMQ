@@ -282,6 +282,19 @@ async function main() {
     ],
   });
 
+  // Seed ISO criteria (118 placeholders) - idempotent upsert
+  console.log('Seeding ISO criteria...');
+  for (let i = 1; i <= 118; i++) {
+    const code = `ISO-CR-${String(i).padStart(3, '0')}`;
+    const title = `ISO 9001 Criterion ${i}`;
+    await prisma.criterion.upsert({
+      where: { code },
+      update: { title, description: '' },
+      create: { code, title, description: '' },
+    });
+  }
+
+
   const nonConformityA = await prisma.nonConformity.create({
     data: {
       title: "Missing calibration evidence for measurement device",

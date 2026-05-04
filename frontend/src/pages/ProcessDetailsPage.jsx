@@ -84,7 +84,14 @@ export default function ProcessDetailsPage() {
         item.code === code
           ? {
               ...item,
-              [field]: field === "score" ? Math.max(0, Math.min(100, Number(value) || 0)) : value,
+              [field]: 
+                field === "score" 
+                  ? Math.max(0, Math.min(100, Number(value) || 0))
+                  : field === "rate"
+                  ? Math.max(0, Math.min(100, Number(value) || 0))
+                  : field === "selected"
+                  ? !!value
+                  : value,
             }
           : item,
       ),
@@ -98,7 +105,9 @@ export default function ProcessDetailsPage() {
         items: assessment.map((item) => ({
           code: item.code,
           name: item.name,
+          selected: !!item.selected,
           score: Number(item.score || 0),
+          rate: item.rate ? Number(item.rate) : null,
           veracityLevel: item.veracityLevel || "FALSE",
           notes: item.notes || "",
         })),
@@ -213,17 +222,39 @@ export default function ProcessDetailsPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
               <tr className="text-left text-slate-500">
+                <th className="px-4 py-3 font-medium w-8">
+                  <input 
+                    type="checkbox" 
+                    disabled={!canEditAssessment}
+                    checked={assessment.length > 0 && assessment.every(i => i.selected)}
+                    onChange={(e) => {
+                      const allSelected = e.target.checked;
+                      setAssessment(current => current.map(item => ({ ...item, selected: allSelected })));
+                    }}
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">Exigence</th>
                 <th className="px-4 py-3 font-medium">Véracité</th>
+                <th className="px-4 py-3 font-medium">Score (%)</th>
                 <th className="px-4 py-3 font-medium">Taux (%)</th>
                 <th className="px-4 py-3 font-medium">Observation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {assessment.map((item) => (
-                <tr key={item.code}>
+                <tr key={item.code} className={item.selected ? "" : "opacity-60"}>
+                  <td className="px-4 py-3 align-top">
+                    <input 
+                      type="checkbox" 
+                      checked={!!item.selected}
+                      disabled={!canEditAssessment}
+                      onChange={(e) => updateRequirement(item.code, "selected", e.target.checked)}
+                    />
+                  </td>
                   <td className="px-4 py-3 align-top">
                     <p className="font-medium text-slate-900">{item.code}. {item.name}</p>
+                    {item.description && <p className="text-xs text-slate-500 mt-1">{item.description}</p>}
+                    {item.clause && <p className="text-xs text-slate-400">Clause: {item.clause}</p>}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <Select
@@ -244,6 +275,19 @@ export default function ProcessDetailsPage() {
                       value={item.score}
                       disabled={!canEditAssessment}
                       onChange={(event) => updateRequirement(item.code, "score", event.target.value)}
+                      className="w-20"
+                    />
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={item.rate || ""}
+                      placeholder="Taux"
+                      disabled={!canEditAssessment}
+                      onChange={(event) => updateRequirement(item.code, "rate", event.target.value)}
+                      className="w-20"
                     />
                   </td>
                   <td className="px-4 py-3 align-top">

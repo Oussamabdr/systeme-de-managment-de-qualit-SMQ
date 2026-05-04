@@ -1,28 +1,53 @@
 const prisma = require("../config/prisma");
+const ApiError = require("../utils/apiError");
+
+function modelAvailable() {
+  return prisma && prisma.user && typeof prisma.user.findUnique === "function";
+}
 
 async function findByEmail(email) {
-  return prisma.user.findUnique({ where: { email } });
+  if (!modelAvailable()) throw new ApiError(503, "Database not configured or unreachable");
+  try {
+    return await prisma.user.findUnique({ where: { email } });
+  } catch (err) {
+    throw new ApiError(503, `Database error: ${err.message}`);
+  }
 }
 
 async function findById(id) {
-  return prisma.user.findUnique({ where: { id } });
+  if (!modelAvailable()) throw new ApiError(503, "Database not configured or unreachable");
+  try {
+    return await prisma.user.findUnique({ where: { id } });
+  } catch (err) {
+    throw new ApiError(503, `Database error: ${err.message}`);
+  }
 }
 
 async function createUser(data) {
-  return prisma.user.create({ data });
+  if (!modelAvailable()) throw new ApiError(503, "Database not configured or unreachable");
+  try {
+    return await prisma.user.create({ data });
+  } catch (err) {
+    throw new ApiError(503, `Database error: ${err.message}`);
+  }
 }
 
 async function listUsers(select) {
-  return prisma.user.findMany({
-    select: select || {
-      id: true,
-      fullName: true,
-      email: true,
-      role: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  if (!modelAvailable()) throw new ApiError(503, "Database not configured or unreachable");
+  try {
+    return await prisma.user.findMany({
+      select: select || {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    throw new ApiError(503, `Database error: ${err.message}`);
+  }
 }
 
 module.exports = {

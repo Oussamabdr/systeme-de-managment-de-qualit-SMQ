@@ -2,6 +2,7 @@ const express = require("express");
 const { authenticate } = require("../middlewares/auth.middleware");
 
 const authRoutes = require("./auth.routes");
+const criteriaRoutes = require("./criteria.routes");
 const userRoutes = require("./user.routes");
 const processRoutes = require("./process.routes");
 const projectRoutes = require("./project.routes");
@@ -28,6 +29,9 @@ router.get("/", (_req, res) => {
 router.get("/health", (_req, res) => {
   res.json({ success: true, message: "QMS API healthy" });
 });
+
+// Public: ISO criteria (DB-backed with static fallback)
+router.use("/criteria", criteriaRoutes);
 
 router.use("/auth", authRoutes);
 router.use(authenticate);

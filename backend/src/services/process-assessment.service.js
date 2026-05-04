@@ -1,6 +1,6 @@
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/apiError");
-const { ISO_REQUIREMENTS, VERACITY_LEVELS } = require("../constants/iso-requirements");
+const { VERACITY_LEVELS } = require("../constants/iso-requirements");
 
 function clampScore(score) {
   const numericScore = Number(score);
@@ -17,21 +17,31 @@ function normalizeVeracityLevel(level) {
   return "FALSE";
 }
 
-function buildAssessmentResponse(records) {
-  const recordMap = new Map(records.map((record) => [record.requirementCode, record]));
-  const requirements = ISO_REQUIREMENTS.map((requirement) => {
+async function buildAssessmentResponse(records) {
+  // records: ProcessCriterion rows keyed by criterion code
+  const recordMap = new Map(records.map((record) => [record.criterion.code, record]));
+
+  // load all criteria from DB
+  const allCriteria = await prisma.criterion.findMany({ orderBy: { code: "asc" } });
+
+  const requirements = allCriteria.map((requirement) => {
     const saved = recordMap.get(requirement.code);
     return {
+      id: requirement.id,
       code: requirement.code,
-      name: requirement.name,
+      name: requirement.title,
+      description: requirement.description || "",
+      clause: requirement.clause || null,
+      selected: !!saved ? !!saved.selected : false,
       score: saved ? saved.score : 0,
+      rate: saved ? saved.rate : null,
       veracityLevel: saved?.veracityLevel || "FALSE",
       notes: saved?.notes || "",
       updatedAt: saved?.updatedAt || null,
     };
   });
 
-  const totalScore = requirements.reduce((sum, item) => sum + item.score, 0);
+  const totalScore = requirements.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
   const overallScore = requirements.length > 0 ? Math.round((totalScore / requirements.length) * 10) / 10 : 0;
 
   return {
@@ -64,9 +74,9 @@ async function ensureProcessExists(processId) {
 
 async function getProcessAssessment(processId) {
   await ensureProcessExists(processId);
-  const records = await prisma.processRequirementAssessment.findMany({
+  const records = await prisma.processCriterion.findMany({
     where: { processId },
-    orderBy: { requirementCode: "asc" },
+    include: { criterion: true },
   });
 
   return buildAssessmentResponse(records);
@@ -75,38 +85,44 @@ async function getProcessAssessment(processId) {
 async function saveProcessAssessment(processId, items) {
   await ensureProcessExists(processId);
 
-  const allowedCodes = new Set(ISO_REQUIREMENTS.map((item) => item.code));
-  const invalidItem = items.find((item) => !allowedCodes.has(item.code));
+  // Map provided codes to criterion IDs
+  const codes = items.map((it) => it.code);
+  const criteria = await prisma.criterion.findMany({ where: { code: { in: codes } } });
+  const codeToId = new Map(criteria.map((c) => [c.code, c.id]));
+  const invalidItem = items.find((item) => !codeToId.has(item.code));
   if (invalidItem) {
-    throw new ApiError(400, `Unknown ISO requirement code: ${invalidItem.code}`);
+    throw new ApiError(400, `Unknown ISO criterion code: ${invalidItem.code}`);
   }
 
-  await prisma.$transaction(
-    items.map((item) =>
-      prisma.processRequirementAssessment.upsert({
-        where: {
-          processId_requirementCode: {
-            processId,
-            requirementCode: item.code,
-          },
-        },
-        update: {
-          requirementName: item.name,
-          score: clampScore(item.score),
-          veracityLevel: normalizeVeracityLevel(item.veracityLevel),
-          notes: item.notes || "",
-        },
-        create: {
+  const ops = items.map((item) => {
+    const criterionId = codeToId.get(item.code);
+    return prisma.processCriterion.upsert({
+      where: {
+        processId_criterionId: {
           processId,
-          requirementCode: item.code,
-          requirementName: item.name,
-          score: clampScore(item.score),
-          veracityLevel: normalizeVeracityLevel(item.veracityLevel),
-          notes: item.notes || "",
+          criterionId,
         },
-      }),
-    ),
-  );
+      },
+      update: {
+        selected: item.selected !== undefined ? !!item.selected : true,
+        score: clampScore(item.score),
+        rate: item.rate || null,
+        veracityLevel: normalizeVeracityLevel(item.veracityLevel),
+        notes: item.notes || "",
+      },
+      create: {
+        processId,
+        criterionId,
+        selected: item.selected !== undefined ? !!item.selected : true,
+        score: clampScore(item.score),
+        rate: item.rate || null,
+        veracityLevel: normalizeVeracityLevel(item.veracityLevel),
+        notes: item.notes || "",
+      },
+    });
+  });
+
+  await prisma.$transaction(ops);
 
   return getProcessAssessment(processId);
 }
