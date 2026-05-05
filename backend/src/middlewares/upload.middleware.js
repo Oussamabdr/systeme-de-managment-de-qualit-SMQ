@@ -1,11 +1,20 @@
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const multer = require("multer");
 const env = require("../config/env");
 
-const uploadPath = path.resolve(process.cwd(), env.uploadDir);
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
+let uploadPath = path.resolve(process.cwd(), env.uploadDir);
+try {
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+} catch (error) {
+  // Fallback to temp dir for read-only environments (e.g., serverless)
+  uploadPath = path.join(os.tmpdir(), "uploads");
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
 }
 
 const storage = multer.diskStorage({
