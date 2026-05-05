@@ -106,7 +106,7 @@ async function saveProcessAssessment(processId, items) {
       update: {
         selected: item.selected !== undefined ? !!item.selected : true,
         score: clampScore(item.score),
-        rate: item.rate || null,
+        rate: item.rate ?? null,
         veracityLevel: normalizeVeracityLevel(item.veracityLevel),
         notes: item.notes || "",
       },
@@ -115,7 +115,7 @@ async function saveProcessAssessment(processId, items) {
         criterionId,
         selected: item.selected !== undefined ? !!item.selected : true,
         score: clampScore(item.score),
-        rate: item.rate || null,
+        rate: item.rate ?? null,
         veracityLevel: normalizeVeracityLevel(item.veracityLevel),
         notes: item.notes || "",
       },

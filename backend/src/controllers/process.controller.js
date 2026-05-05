@@ -12,7 +12,7 @@ const assessmentSchema = z.object({
       name: z.string().min(1).optional(),
       selected: z.boolean().optional(),
       score: z.coerce.number().min(0).max(100).optional().default(0),
-      rate: z.number().int().min(0).max(100).optional(),
+      rate: z.coerce.number().int().min(0).max(100).optional().nullable(),
       veracityLevel: z.enum(["FALSE", "RATHER_FALSE", "RATHER_TRUE", "TRUE"]).default("FALSE"),
       notes: z.string().optional().default(""),
     }),

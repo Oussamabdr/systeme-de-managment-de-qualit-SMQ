@@ -94,11 +94,13 @@ export default function ProcessDetailsPage() {
         item.code === code
           ? {
               ...item,
-              [field]: 
-                field === "score" 
+              [field]:
+                field === "score"
                   ? Math.max(0, Math.min(100, Number(value) || 0))
                   : field === "rate"
-                  ? Math.max(0, Math.min(100, Number(value) || 0))
+                  ? value === ""
+                    ? null
+                    : Math.max(0, Math.min(100, Number(value) || 0))
                   : field === "selected"
                   ? !!value
                   : value,
@@ -117,7 +119,7 @@ export default function ProcessDetailsPage() {
           name: item.name,
           selected: !!item.selected,
           score: Number(item.score || 0),
-          rate: item.rate ? Number(item.rate) : null,
+          rate: item.rate === null || item.rate === undefined ? null : Number(item.rate),
           veracityLevel: item.veracityLevel || "FALSE",
           notes: item.notes || "",
         })),
@@ -293,7 +295,7 @@ export default function ProcessDetailsPage() {
                       type="number"
                       min="0"
                       max="100"
-                      value={item.rate || ""}
+                      value={item.rate ?? ""}
                       placeholder="Taux"
                       disabled={!canEditAssessment}
                       onChange={(event) => updateRequirement(item.code, "rate", event.target.value)}
