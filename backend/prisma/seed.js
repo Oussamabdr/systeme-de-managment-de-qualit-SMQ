@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
+const { ISO_CRITERIA } = require("../src/constants/iso-criteria-list");
 
 const prisma = new PrismaClient();
 
@@ -282,19 +283,24 @@ async function main() {
     ],
   });
 
-  // Seed ISO criteria (118 placeholders) - idempotent upsert
-  console.log('Seeding ISO criteria...');
-  for (let i = 1; i <= 118; i++) {
-    const code = `ISO-CR-${String(i).padStart(3, '0')}`;
-    const title = `ISO 9001 Criterion ${i}`;
+  // Seed ISO criteria - idempotent upsert
+  console.log("Seeding ISO criteria...");
+  for (const item of ISO_CRITERIA) {
     await prisma.criterion.upsert({
-      where: { code },
-      update: { title, description: '' },
-      create: { code, title, description: '' },
+      where: { code: item.code },
+      update: {
+        title: item.title,
+        description: item.description || "",
+        clause: item.clause || null,
+      },
+      create: {
+        code: item.code,
+        title: item.title,
+        description: item.description || "",
+        clause: item.clause || null,
+      },
     });
   }
-
-
   const nonConformityA = await prisma.nonConformity.create({
     data: {
       title: "Missing calibration evidence for measurement device",

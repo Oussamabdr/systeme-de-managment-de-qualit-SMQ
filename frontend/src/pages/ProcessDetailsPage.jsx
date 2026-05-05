@@ -66,6 +66,16 @@ export default function ProcessDetailsPage() {
       requirementCount: assessment.length,
     };
   }, [assessment]);
+
+  const sortedAssessment = useMemo(() => {
+    const copy = [...assessment];
+    copy.sort((a, b) => {
+      const selectedDelta = Number(!!b.selected) - Number(!!a.selected);
+      if (selectedDelta !== 0) return selectedDelta;
+      return String(a.code || "").localeCompare(String(b.code || ""));
+    });
+    return copy;
+  }, [assessment]);
   const process = state.data || {
     name: "",
     description: "",
@@ -241,7 +251,7 @@ export default function ProcessDetailsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {assessment.map((item) => (
+              {sortedAssessment.map((item) => (
                 <tr key={item.code} className={item.selected ? "" : "opacity-60"}>
                   <td className="px-4 py-3 align-top">
                     <input 
