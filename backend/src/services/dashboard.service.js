@@ -22,6 +22,10 @@ function writeCache(key, data) {
   dashboardCache.set(key, { createdAt: Date.now(), data });
 }
 
+function clearDashboardCache() {
+  dashboardCache.clear();
+}
+
 function getPeriodStart(period) {
   if (!period) return null;
 
@@ -243,7 +247,7 @@ function buildRequirementAssessmentOverview(processes) {
   };
 
   const rows = processes.map((process) => {
-    const requirements = process.requirementAssessments || [];
+    const requirements = process.processCriterions || [];
     for (const requirement of requirements) {
       if (veracityTotals[requirement.veracityLevel] !== undefined) {
         veracityTotals[requirement.veracityLevel] += 1;
@@ -276,7 +280,7 @@ function buildRequirementAssessmentOverview(processes) {
       dominantVeracityLevel,
       dominantVeracityLabel: veracityLabels[dominantVeracityLevel],
       assessedRequirements: requirements.filter((item) => Number(item.score || 0) > 0).length,
-      totalRequirements: 7,
+      totalRequirements: requirements.length,
       lastUpdatedAt: requirements.reduce((latest, item) => {
         if (!item.updatedAt) return latest;
         return !latest || new Date(item.updatedAt) > new Date(latest) ? item.updatedAt : latest;
@@ -466,4 +470,4 @@ async function getMyOverview(userId, period) {
   return result;
 }
 
-module.exports = { getOverview, getMyOverview };
+module.exports = { getOverview, getMyOverview, clearDashboardCache };

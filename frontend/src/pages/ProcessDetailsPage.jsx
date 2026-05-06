@@ -12,8 +12,8 @@ import { useAuthStore } from "../store/authStore";
 
 const VERACITY_OPTIONS = [
   { value: "FALSE", label: "Faux" },
-  { value: "RATHER_FALSE", label: "Plutôt faux" },
-  { value: "RATHER_TRUE", label: "Plutôt vrai" },
+  { value: "RATHER_FALSE", label: "Plutot faux" },
+  { value: "RATHER_TRUE", label: "Plutot vrai" },
   { value: "TRUE", label: "Vrai" },
 ];
 
@@ -23,7 +23,15 @@ export default function ProcessDetailsPage() {
   const canEditAssessment = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER";
   const [state, setState] = useState({ loading: true, data: null, error: "" });
   const [assessment, setAssessment] = useState([]);
-  const [assessmentMeta, setAssessmentMeta] = useState({ loading: true, saving: false, error: "", success: "", summary: null });
+  const [assessmentMeta, setAssessmentMeta] = useState({
+    loading: true,
+    saving: false,
+    error: "",
+    success: "",
+    summary: null,
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOnly, setSelectedOnly] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -34,7 +42,9 @@ export default function ProcessDetailsPage() {
           api.get(`/processes/${processId}`),
           api.get(`/processes/${processId}/assessment`),
         ]);
+
         if (!mounted) return;
+
         setState({ loading: false, data: processData.data, error: "" });
         setAssessment(assessmentData.data.requirements || []);
         setAssessmentMeta({
@@ -47,7 +57,11 @@ export default function ProcessDetailsPage() {
       } catch (error) {
         if (!mounted) return;
         setState({ loading: false, data: null, error: getErrorMessage(error) });
-        setAssessmentMeta((prev) => ({ ...prev, loading: false, error: getErrorMessage(error) }));
+        setAssessmentMeta((prev) => ({
+          ...prev,
+          loading: false,
+          error: getErrorMessage(error),
+        }));
       }
     }
 
@@ -58,11 +72,17 @@ export default function ProcessDetailsPage() {
   }, [processId]);
 
   const assessmentSummary = useMemo(() => {
-    if (!assessment.length) return { overallScore: 0, completedCount: 0, requirementCount: 0 };
-    const totalScore = assessment.reduce((sum, item) => sum + Number(item.score || 0), 0);
+    if (!assessment.length) {
+      return { overallScore: 0, completedCount: 0, requirementCount: 0 };
+    }
+
+    const selectedItems = assessment.filter((item) => item.selected);
+    const baseItems = selectedItems.length ? selectedItems : assessment;
+    const totalScore = baseItems.reduce((sum, item) => sum + Number(item.score || 0), 0);
+
     return {
-      overallScore: Math.round((totalScore / assessment.length) * 10) / 10,
-      completedCount: assessment.filter((item) => Number(item.score || 0) > 0).length,
+      overallScore: baseItems.length ? Math.round((totalScore / baseItems.length) * 10) / 10 : 0,
+      completedCount: selectedItems.length,
       requirementCount: assessment.length,
     };
   }, [assessment]);
@@ -76,6 +96,25 @@ export default function ProcessDetailsPage() {
     });
     return copy;
   }, [assessment]);
+
+  const filteredAssessment = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return sortedAssessment.filter((item) => {
+      if (selectedOnly && !item.selected) return false;
+      if (!normalizedSearch) return true;
+
+      return [item.code, item.name, item.description, item.clause]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+    });
+  }, [sortedAssessment, searchTerm, selectedOnly]);
+
+  const selectedCount = useMemo(
+    () => assessment.filter((item) => item.selected).length,
+    [assessment],
+  );
+
   const process = state.data || {
     name: "",
     description: "",
@@ -98,14 +137,33 @@ export default function ProcessDetailsPage() {
                 field === "score"
                   ? Math.max(0, Math.min(100, Number(value) || 0))
                   : field === "rate"
-                  ? value === ""
-                    ? null
-                    : Math.max(0, Math.min(100, Number(value) || 0))
-                  : field === "selected"
-                  ? !!value
-                  : value,
+                    ? value === ""
+                      ? null
+                      : Math.max(0, Math.min(100, Number(value) || 0))
+                    : field === "selected"
+                      ? !!value
+                      : value,
             }
           : item,
+      ),
+    );
+  }
+
+  function applySelectionToFiltered(nextSelected) {
+    const visibleCodes = new Set(filteredAssessment.map((item) => item.code));
+    setAssessment((current) =>
+      current.map((item) =>
+        visibleCodes.has(item.code)
+          ? { ...item, selected: nextSelected }
+          : item,
+      ),
+    );
+  }
+
+  function selectByVeracity(level) {
+    setAssessment((current) =>
+      current.map((item) =>
+        item.veracityLevel === level ? { ...item, selected: true } : item,
       ),
     );
   }
@@ -124,13 +182,15 @@ export default function ProcessDetailsPage() {
           notes: item.notes || "",
         })),
       };
+
       const { data } = await api.put(`/processes/${processId}/assessment`, payload);
+
       setAssessment(data.data.requirements || []);
       setAssessmentMeta({
         loading: false,
         saving: false,
         error: "",
-        success: "Fiche d'évaluation enregistrée.",
+        success: "Fiche d'evaluation enregistree.",
         summary: data.data.summary || null,
       });
     } catch (error) {
@@ -157,7 +217,9 @@ export default function ProcessDetailsPage() {
         <div>
           <Card>
             <p className="text-xs uppercase tracking-[0.16em] text-slate-500">KPI count</p>
-            <p className="mt-1 text-lg font-medium text-slate-900">{Array.isArray(process.indicators) ? process.indicators.length : 0}</p>
+            <p className="mt-1 text-lg font-medium text-slate-900">
+              {Array.isArray(process.indicators) ? process.indicators.length : 0}
+            </p>
           </Card>
         </div>
       </section>
@@ -203,16 +265,65 @@ export default function ProcessDetailsPage() {
 
       <section className="saas-card p-5">
         <CardHeader
-          title="Fiche d'évaluation des exigences ISO 9001"
-          subtitle="Renseignez le taux de véracité/conformité du processus pour chaque exigence, puis suivez le taux global."
+          title="Fiche d'evaluation des exigences ISO 9001"
+          subtitle="Selectionnez les criteres a evaluer, puis renseignez uniquement ceux qui sont retenus."
         />
+
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.5fr)_280px]">
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Recherche critere
+                </label>
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Code, clause, mot-cle, exigence..."
+                />
+              </div>
+              <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={selectedOnly}
+                  onChange={(event) => setSelectedOnly(event.target.checked)}
+                />
+                Afficher seulement les criteres selectionnes
+              </label>
+            </div>
+
+            {canEditAssessment ? (
+              <div className="flex flex-wrap gap-2 xl:justify-end">
+                <Button variant="subtle" onClick={() => applySelectionToFiltered(true)}>
+                  Selectionner visibles
+                </Button>
+                <Button variant="subtle" onClick={() => applySelectionToFiltered(false)}>
+                  Deselectionner visibles
+                </Button>
+                <Button variant="subtle" onClick={() => selectByVeracity("FALSE")}>
+                  Selectionner Faux
+                </Button>
+                <Button onClick={saveAssessment} disabled={assessmentMeta.saving || assessmentMeta.loading}>
+                  {assessmentMeta.saving ? "Enregistrement..." : "Enregistrer"}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge tone="slate">Selectionnes: {selectedCount}</Badge>
+            <Badge tone="slate">Affiches: {filteredAssessment.length}</Badge>
+            <Badge tone="slate">Total: {assessment.length}</Badge>
+          </div>
+        </div>
+
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <Card>
             <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Taux global</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">{assessmentSummary.overallScore}%</p>
           </Card>
           <Card>
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Exigences renseignées</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Criteres retenus</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">
               {assessmentSummary.completedCount}/{assessmentSummary.requirementCount}
             </p>
@@ -221,7 +332,7 @@ export default function ProcessDetailsPage() {
             <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Statut</p>
             <div className="mt-2">
               <Badge tone={assessmentSummary.overallScore >= 80 ? "green" : assessmentSummary.overallScore >= 60 ? "amber" : "red"}>
-                {assessmentSummary.overallScore >= 80 ? "Maîtrisé" : assessmentSummary.overallScore >= 60 ? "À renforcer" : "Critique"}
+                {assessmentSummary.overallScore >= 80 ? "Maitrise" : assessmentSummary.overallScore >= 60 ? "A renforcer" : "Critique"}
               </Badge>
             </div>
           </Card>
@@ -234,48 +345,47 @@ export default function ProcessDetailsPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
               <tr className="text-left text-slate-500">
-                <th className="px-4 py-3 font-medium w-8">
-                  <input 
-                    type="checkbox" 
-                    disabled={!canEditAssessment}
-                    checked={assessment.length > 0 && assessment.every(i => i.selected)}
-                    onChange={(e) => {
-                      const allSelected = e.target.checked;
-                      setAssessment(current => current.map(item => ({ ...item, selected: allSelected })));
-                    }}
+                <th className="w-8 px-4 py-3 font-medium">
+                  <input
+                    type="checkbox"
+                    disabled={!canEditAssessment || filteredAssessment.length === 0}
+                    checked={filteredAssessment.length > 0 && filteredAssessment.every((item) => item.selected)}
+                    onChange={(event) => applySelectionToFiltered(event.target.checked)}
                   />
                 </th>
                 <th className="px-4 py-3 font-medium">Exigence</th>
-                <th className="px-4 py-3 font-medium">Véracité</th>
+                <th className="px-4 py-3 font-medium">Veracite</th>
                 <th className="px-4 py-3 font-medium">Score (%)</th>
                 <th className="px-4 py-3 font-medium">Taux (%)</th>
                 <th className="px-4 py-3 font-medium">Observation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedAssessment.map((item) => (
+              {filteredAssessment.map((item) => (
                 <tr key={item.code} className={item.selected ? "" : "opacity-60"}>
                   <td className="px-4 py-3 align-top">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={!!item.selected}
                       disabled={!canEditAssessment}
-                      onChange={(e) => updateRequirement(item.code, "selected", e.target.checked)}
+                      onChange={(event) => updateRequirement(item.code, "selected", event.target.checked)}
                     />
                   </td>
                   <td className="px-4 py-3 align-top">
                     <p className="font-medium text-slate-900">{item.code}. {item.name}</p>
-                    {item.description && <p className="text-xs text-slate-500 mt-1">{item.description}</p>}
-                    {item.clause && <p className="text-xs text-slate-400">Clause: {item.clause}</p>}
+                    {item.description ? <p className="mt-1 text-xs text-slate-500">{item.description}</p> : null}
+                    {item.clause ? <p className="text-xs text-slate-400">Clause: {item.clause}</p> : null}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <Select
                       value={item.veracityLevel || "FALSE"}
-                      disabled={!canEditAssessment}
+                      disabled={!canEditAssessment || !item.selected}
                       onChange={(event) => updateRequirement(item.code, "veracityLevel", event.target.value)}
                     >
                       {VERACITY_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </Select>
                   </td>
@@ -285,7 +395,7 @@ export default function ProcessDetailsPage() {
                       min="0"
                       max="100"
                       value={item.score}
-                      disabled={!canEditAssessment}
+                      disabled={!canEditAssessment || !item.selected}
                       onChange={(event) => updateRequirement(item.code, "score", event.target.value)}
                       className="w-20"
                     />
@@ -297,7 +407,7 @@ export default function ProcessDetailsPage() {
                       max="100"
                       value={item.rate ?? ""}
                       placeholder="Taux"
-                      disabled={!canEditAssessment}
+                      disabled={!canEditAssessment || !item.selected}
                       onChange={(event) => updateRequirement(item.code, "rate", event.target.value)}
                       className="w-20"
                     />
@@ -306,9 +416,9 @@ export default function ProcessDetailsPage() {
                     <TextArea
                       rows="2"
                       value={item.notes || ""}
-                      disabled={!canEditAssessment}
+                      disabled={!canEditAssessment || !item.selected}
                       onChange={(event) => updateRequirement(item.code, "notes", event.target.value)}
-                      placeholder="Preuves, écarts, remarques d'audit..."
+                      placeholder="Preuves, ecarts, remarques d'audit..."
                     />
                   </td>
                 </tr>
@@ -317,11 +427,9 @@ export default function ProcessDetailsPage() {
           </table>
         </div>
 
-        {canEditAssessment ? (
-          <div className="mt-4 flex justify-end">
-            <Button onClick={saveAssessment} disabled={assessmentMeta.saving || assessmentMeta.loading}>
-              {assessmentMeta.saving ? "Enregistrement..." : "Enregistrer la fiche"}
-            </Button>
+        {!filteredAssessment.length ? (
+          <div className="mt-4 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+            Aucun critere ne correspond au filtre courant.
           </div>
         ) : null}
       </section>

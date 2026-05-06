@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/apiError");
 const { VERACITY_LEVELS } = require("../constants/iso-requirements");
+const { clearDashboardCache } = require("./dashboard.service");
 
 function clampScore(score) {
   const numericScore = Number(score);
@@ -123,6 +124,8 @@ async function saveProcessAssessment(processId, items) {
   });
 
   await prisma.$transaction(ops);
+
+  clearDashboardCache();
 
   return getProcessAssessment(processId);
 }

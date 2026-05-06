@@ -30,12 +30,19 @@ async function findProcessesForOverview(where) {
       id: true,
       name: true,
       indicators: true,
-      requirementAssessments: {
+      processCriterions: {
+        where: {
+          selected: true,
+        },
         select: {
-          requirementCode: true,
           score: true,
           veracityLevel: true,
           updatedAt: true,
+          criterion: {
+            select: {
+              code: true,
+            },
+          },
         },
       },
     },
