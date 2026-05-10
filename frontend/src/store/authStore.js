@@ -25,7 +25,14 @@ export const useAuthStore = create((set) => ({
   async login(payload) {
     set({ loading: true });
     try {
-      const { data } = await api.post("/auth/login", payload);
+      // Use form-urlencoded to avoid CORS preflight timeout
+      const params = new URLSearchParams();
+      params.append('email', payload.email);
+      params.append('password', payload.password);
+      
+      const { data } = await api.post("/auth/login", params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
       storage.setItem("qms_token", data.token);
       storage.setItem("qms_user", JSON.stringify(data.user));
       set({ token: data.token, user: data.user, loading: false });
