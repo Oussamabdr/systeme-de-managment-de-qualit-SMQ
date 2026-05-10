@@ -9,6 +9,18 @@ const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
+// Handle all OPTIONS requests immediately with CORS headers
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  next();
+});
+
 // CORS configuration: allow all origins for serverless deployment
 const corsOptions = {
 	origin: true, // Allow all origins
@@ -19,10 +31,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
-
-// Ensure all OPTIONS requests return immediately with CORS headers
-app.options("*", cors(corsOptions));
-
 app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
