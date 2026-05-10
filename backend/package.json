@@ -10,6 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
+    "db:seed-extra": "node prisma/seed-extra.js",
     "db:add-domain": "node prisma/add-domain-data.js"
   },
   "keywords": [],
