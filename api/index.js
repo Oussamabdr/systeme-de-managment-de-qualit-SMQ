@@ -1,23 +1,17 @@
-module.exports = async (req, res) => {
+module.exports = (req, res) => {
   // Set CORS headers immediately for ALL requests
   const origin = req.headers.origin || "*";
-  res.setHeader("Access-Control-Allow-Origin", origin);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
 
-  // Handle OPTIONS requests with writeHead
+  // Handle OPTIONS requests
   if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization",
-      "Access-Control-Allow-Credentials": "true"
-    });
-    return res.end();
+    return res.status(204).send();
   }
 
-  // Load Express app without timeout
+  // Load Express app
   const serverless = require("serverless-http");
   const app = require("../backend/src/app");
   const handler = serverless(app);
