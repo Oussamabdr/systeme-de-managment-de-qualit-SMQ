@@ -1,0 +1,19 @@
+name: Post-deploy health check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Verify live frontend and backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check backend health endpoint
+        run: |
+          curl -fsS https://iso-lemon.vercel.app/api/health
+
+      - name: Check frontend root URL
+        run: |
+          curl -fsSI https://Oussamabdr.github.io/systeme-de-managment-de-qualit-SMQ/
