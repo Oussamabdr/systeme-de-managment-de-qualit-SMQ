@@ -1,12 +1,16 @@
 module.exports = (req, res) => {
   // Test barebones GET endpoint
-  if (req.url === "/api/test-get" && req.method === "GET") {
+    // Extract path without /api prefix
+    const path = req.url.replace(/^\/api/, "");
+
+    // Test barebones GET endpoint
+    if (path === "/test-get" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ success: true, message: "GET works" }));
   }
 
   // Test barebones OPTIONS endpoint
-  if (req.url === "/api/test-options" && req.method === "OPTIONS") {
+    if (path === "/test-options" && req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.writeHead(204);
