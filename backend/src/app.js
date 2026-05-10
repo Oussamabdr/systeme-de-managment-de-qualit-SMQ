@@ -1,4 +1,4 @@
-const path = require("path");
+﻿const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -8,8 +8,6 @@ const apiRoutes = require("./routes");
 const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
-
-// Health check endpoint
 
 // OPTIONS handler at the very top - before all other middleware
 app.options("*", (req, res) => {
@@ -30,12 +28,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
-// Temporarily disable morgan to test if it's causing timeouts
-// app.use(morgan("dev"));
+app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
-// Temporarily disable static file serving
-// app.use("/uploads", express.static(path.resolve(process.cwd(), env.uploadDir)));
+app.use("/uploads", express.static(path.resolve(process.cwd(), env.uploadDir)));
 
 app.get("/", (_req, res) => {
 	res.json({
@@ -44,10 +40,6 @@ app.get("/", (_req, res) => {
 		apiRoot: "/api",
 		health: "/api/health",
 	});
-});
-
-app.get("/test", (_req, res) => {
-	res.json({ success: true, message: "Test endpoint works", timestamp: new Date().toISOString() });
 });
 
 app.use("/api", apiRoutes);
