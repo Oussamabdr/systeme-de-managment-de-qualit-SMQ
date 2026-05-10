@@ -9,6 +9,8 @@ const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
+// Health check endpoint
+
 // OPTIONS handler at the very top - before all other middleware
 app.options("*", (req, res) => {
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
