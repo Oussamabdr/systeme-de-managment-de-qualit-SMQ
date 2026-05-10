@@ -34,7 +34,8 @@ app.use(helmet());
 // app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static(path.resolve(process.cwd(), env.uploadDir)));
+// Temporarily disable static file serving
+// app.use("/uploads", express.static(path.resolve(process.cwd(), env.uploadDir)));
 
 app.get("/", (_req, res) => {
 	res.json({
