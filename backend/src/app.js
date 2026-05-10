@@ -44,6 +44,10 @@ app.get("/", (_req, res) => {
 	});
 });
 
+app.get("/test", (_req, res) => {
+	res.json({ success: true, message: "Test endpoint works", timestamp: new Date().toISOString() });
+});
+
 app.use("/api", apiRoutes);
 app.use(notFound);
 app.use(errorHandler);
