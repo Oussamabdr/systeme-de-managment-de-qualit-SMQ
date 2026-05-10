@@ -1,25 +1,27 @@
 module.exports = async (req, res) => {
+  // Set CORS headers immediately for ALL requests
+  const origin = req.headers.origin || "*";
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  // CRITICAL: Handle OPTIONS requests FIRST, before anything else
+  if (req.method === "OPTIONS") {
+    console.log("OPTIONS request to", req.url);
+    res.setHeader("Content-Length", "0");
+    return res.writeHead(204, {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+      "Access-Control-Allow-Credentials": "true"
+    }).end();
+  }
+
   try {
-    // Set CORS headers immediately for all requests
-    const origin = req.headers.origin || "*";
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-
-    // Immediate OPTIONS response
-    if (req.method === "OPTIONS") {
-      return res.status(204).end();
-    }
-
     // Quick health check
     if (req.url === "/api/health" || req.url === "/api") {
       return res.status(200).json({ success: true, message: "QMS API online", timestamp: new Date().toISOString() });
-    }
-
-    // Test endpoint (bypass Express)
-    if (req.url === "/api/auth/login-test" && req.method === "POST") {
-      return res.status(200).json({ success: true, message: "Login test OK", body: req.body });
     }
 
     // Load Express app with timeout protection
@@ -39,6 +41,7 @@ module.exports = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error("Handler error:", error);
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: "Internal server error", error: error.message });
     }
