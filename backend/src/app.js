@@ -18,19 +18,7 @@ app.options("*", (req, res) => {
   res.status(204).end();
 });
 
-// Handle all OPTIONS requests immediately with CORS headers before other middleware
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-  next();
-});
-
-// CORS configuration (backup for browser requests that don't use the middleware)
+// CORS configuration
 const corsOptions = {
 	origin: true,
 	credentials: true,
