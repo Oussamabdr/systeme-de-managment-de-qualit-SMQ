@@ -1,13 +1,14 @@
 module.exports = async (req, res) => {
   try {
-    // Ensure CORS headers are always present for requests routed through Vercel
+    // Set CORS headers immediately for all requests
     const origin = req.headers.origin || "*";
     res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Max-Age", "86400");
 
-    // Short-circuit preflight requests
+    // Handle all preflight OPTIONS requests immediately
     if (req.method === "OPTIONS") {
       return res.status(204).end();
     }
