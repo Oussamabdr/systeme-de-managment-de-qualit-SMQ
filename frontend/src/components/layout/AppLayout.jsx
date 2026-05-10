@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
-import { Input, Select } from "../ui/Input";
+import { Input } from "../ui/Input";
 import Button from "../ui/Button";
+import ThemeLanguageToggle from "../ui/ThemeLanguageToggle";
 import { useUiStore } from "../../store/uiStore";
-import { languageLabels, t } from "../../utils/i18n";
+import { t } from "../../utils/i18n";
 
 const getNavItems = (language) => [
   {
@@ -143,41 +144,20 @@ export default function AppLayout() {
             <p className="text-sm text-slate-500">{text("Suivi des donnees ISO 9001 et des actions en cours.", "Track ISO 9001 records and current actions.")}</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="relative hidden min-w-65 sm:block">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input placeholder={text("Rechercher les projets, les taches, les docs...", "Search projects, tasks, docs...")} className="pl-9" />
             </div>
 
-            <Select
-              className="hidden h-10 w-28 text-sm sm:block"
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-              aria-label={text("Langue", "Language")}
-            >
-              {Object.entries(languageLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </Select>
-
-            <div className="hidden items-center rounded-lg border border-slate-200/80 bg-slate-50 p-1 sm:flex">
-              <button
-                className={`theme-choice ${theme === "light" ? "theme-choice-active" : ""}`}
-                onClick={() => setTheme("light")}
-                aria-label={text("Theme clair", "Light theme")}
-                type="button"
-              >
-                <Sun size={15} />
-              </button>
-              <button
-                className={`theme-choice ${theme === "dark" ? "theme-choice-active" : ""}`}
-                onClick={() => setTheme("dark")}
-                aria-label={text("Theme sombre", "Dark theme")}
-                type="button"
-              >
-                <Moon size={15} />
-              </button>
-            </div>
+            {/* Theme & Language Toggle */}
+            <ThemeLanguageToggle 
+              theme={theme} 
+              setTheme={setTheme} 
+              language={language} 
+              setLanguage={setLanguage}
+              variant="expanded"
+            />
 
             <button className="saas-btn saas-btn-subtle h-10 w-10 p-0" aria-label={text("Notifications", "Notifications")}>
               <Bell size={16} />
@@ -194,43 +174,23 @@ export default function AppLayout() {
         </header>
 
         {isMenuOpen ? (
-          <div className="surface ml-auto w-55 p-2">
-            <div className="px-2 pb-2">
-              <label className="text-xs uppercase tracking-[0.14em] text-slate-500">{text("Langue", "Language")}</label>
-              <Select
-                className="mt-2 h-10 w-full text-sm"
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-              >
-                {Object.entries(languageLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="px-2 pb-2">
-              <label className="text-xs uppercase tracking-[0.14em] text-slate-500">{text("Theme", "Theme")}</label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button
-                  className={`saas-btn saas-btn-subtle gap-2 text-sm ${theme === "light" ? "theme-choice-active" : ""}`}
-                  onClick={() => setTheme("light")}
-                  type="button"
-                >
-                  <Sun size={15} />
-                  {text("Clair", "Light")}
-                </button>
-                <button
-                  className={`saas-btn saas-btn-subtle gap-2 text-sm ${theme === "dark" ? "theme-choice-active" : ""}`}
-                  onClick={() => setTheme("dark")}
-                  type="button"
-                >
-                  <Moon size={15} />
-                  {text("Sombre", "Dark")}
-                </button>
+          <div className="surface ml-auto w-55 p-3">
+            <div className="space-y-3">
+              {/* Theme & Language in Mobile Menu */}
+              <div>
+                <label className="text-xs uppercase tracking-[0.14em] text-slate-500 block mb-2">{text("Parametres", "Settings")}</label>
+                <ThemeLanguageToggle 
+                  theme={theme} 
+                  setTheme={setTheme} 
+                  language={language} 
+                  setLanguage={setLanguage}
+                  variant="expanded"
+                />
               </div>
+              <button className="saas-btn saas-btn-ghost w-full justify-start text-sm" onClick={onLogout}>
+                {text("Deconnexion", "Logout")}
+              </button>
             </div>
-            <button className="saas-btn saas-btn-ghost w-full justify-start text-sm" onClick={onLogout}>
-              {text("Deconnexion", "Logout")}
-            </button>
           </div>
         ) : null}
 

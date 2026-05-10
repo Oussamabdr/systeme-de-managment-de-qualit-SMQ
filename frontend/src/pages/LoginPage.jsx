@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
-import { t, languageLabels } from "../utils/i18n";
+import { t } from "../utils/i18n";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import ThemeLanguageToggle from "../components/ui/ThemeLanguageToggle";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -36,6 +37,17 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl items-center p-4">
+      {/* Theme & Language Toggle - Floating Position */}
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeLanguageToggle 
+          theme={theme} 
+          setTheme={setTheme} 
+          language={language} 
+          setLanguage={setLanguage}
+          variant="compact"
+        />
+      </div>
+
       <div className="grid w-full gap-6 md:grid-cols-2">
         <Card className="p-8">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">ISO 9001</p>
@@ -49,29 +61,6 @@ export default function LoginPage() {
         </Card>
 
         <Card className="p-8">
-          <div className="flex justify-end gap-2">
-            <label className="sr-only">Theme</label>
-            <select
-              aria-label="Theme"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              className="saas-input w-28 px-2 py-1 text-sm"
-            >
-              <option value="light">{text("Clair", "Light")}</option>
-              <option value="dark">{text("Sombre", "Dark")}</option>
-            </select>
-            <label className="sr-only">Language</label>
-            <select
-              aria-label="Language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="saas-input w-24 px-2 py-1 text-sm"
-            >
-              <option value="fr">{languageLabels.fr}</option>
-              <option value="en">{languageLabels.en}</option>
-              <option value="bi">{languageLabels.bi}</option>
-            </select>
-          </div>
           <CardHeader title={text("Se connecter", "Sign in")} subtitle={text("Accedez a votre espace de travail.", "Access your workspace.")} />
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div>

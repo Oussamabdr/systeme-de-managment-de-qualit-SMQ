@@ -172,6 +172,51 @@ h6 {
   color: var(--text);
 }
 
+/* Success variant */
+.saas-btn-success {
+  background: #10b981;
+  color: white;
+  box-shadow: none;
+}
+
+.saas-btn-success:hover {
+  background: #059669;
+}
+
+/* Danger variant */
+.saas-btn-danger {
+  background: #ef4444;
+  color: white;
+  box-shadow: none;
+}
+
+.saas-btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Warning variant */
+.saas-btn-warning {
+  background: #f59e0b;
+  color: white;
+  box-shadow: none;
+}
+
+.saas-btn-warning:hover {
+  background: #d97706;
+}
+
+/* Outline variant */
+.saas-btn-outline {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.saas-btn-outline:hover {
+  background: var(--control-muted);
+  border-color: var(--primary-strong);
+}
+
 .saas-input {
   width: 100%;
   border-radius: 8px;
