@@ -1,5 +1,6 @@
 const path = require("path");
 const express = require("express");
+const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const env = require("./config/env");
@@ -8,7 +9,7 @@ const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
-// Handle all OPTIONS requests immediately with CORS headers
+// Handle all OPTIONS requests immediately with CORS headers before other middleware
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
@@ -20,6 +21,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// CORS configuration (backup for browser requests that don't use the middleware)
+const corsOptions = {
+	origin: true,
+	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
