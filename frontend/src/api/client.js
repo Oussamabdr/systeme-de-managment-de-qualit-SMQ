@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const defaultApiBaseUrl =
+  typeof window !== "undefined" && window.location.hostname.includes("localhost")
+    ? "/api"
+    : "https://iso-lemon.vercel.app/api";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: import.meta.env.VITE_API_URL || defaultApiBaseUrl,
 });
 
 api.interceptors.request.use((config) => {
