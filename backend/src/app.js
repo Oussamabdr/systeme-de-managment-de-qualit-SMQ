@@ -1,6 +1,5 @@
 const path = require("path");
 const express = require("express");
-const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const env = require("./config/env");
@@ -21,15 +20,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration: allow all origins for serverless deployment
-const corsOptions = {
-	origin: true, // Allow all origins
-	credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
