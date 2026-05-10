@@ -1,7 +1,7 @@
 name: Deploy Frontend to GitHub Pages
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -16,6 +16,8 @@ jobs:
           cd frontend
           npm ci
       - name: Build
+        env:
+          VITE_BASE_PATH: /systeme-de-managment-de-qualit-SMQ/
         run: |
           cd frontend
           npm run build
