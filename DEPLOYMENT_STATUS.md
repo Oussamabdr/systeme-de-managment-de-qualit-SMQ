@@ -5,18 +5,21 @@
 ### ✅ What's Working
 
 **Infrastructure**
+
 - ✅ Frontend: GitHub Pages (https://Oussamabdr.github.io/systeme-de-managment-de-qualit-SMQ/)
 - ✅ Backend: Vercel (https://iso-lemon.vercel.app/api)
 - ✅ Database: Supabase PostgreSQL
 - ✅ CI/CD: GitHub Actions with Prisma migrations
 
 **Backend Endpoints**
+
 - ✅ `GET /api/health` - Health check (responds in 0.4s)
 - ✅ `POST /api/auth/login` - Login endpoint (responds in 0.5s)
 - ✅ `POST /api/auth/register` - Registration endpoint
 - ✅ All other API routes functional
 
 **Frontend**
+
 - ✅ Loads with correct assets and styling
 - ✅ Login form pre-populated with test credentials
 - ✅ Responsive design working correctly
@@ -28,12 +31,14 @@
 **Issue:** Browser OPTIONS preflight requests timeout on Vercel infrastructure
 
 **Why it happens:**
+
 - Browsers send an OPTIONS request before POST requests (CORS preflight)
 - Vercel's infrastructure has a timeout on all requests (~10 seconds)
 - OPTIONS requests take longer to complete on Vercel, causing timeout
 - When OPTIONS times out, browser aborts the actual POST request
 
 **What we've tried:**
+
 1. ✅ Added explicit OPTIONS handling in api/index.js
 2. ✅ Added CORS headers in Vercel config
 3. ✅ Created dedicated /api/options.js handler
@@ -48,9 +53,11 @@
 **See [DATABASE_SEEDING.md](./DATABASE_SEEDING.md) for complete instructions**
 
 Quick summary:
+
 1. Go to Supabase SQL Editor
 2. Run the SQL INSERT statements (provided in DATABASE_SEEDING.md)
 3. Test login via curl:
+
 ```bash
 curl -X POST "https://iso-lemon.vercel.app/api/auth/login" \
   -H "Content-Type: application/json" \
@@ -64,16 +71,19 @@ Expected: 200/201 with JWT token
 ## 🛠️ Troubleshooting CORS Issue
 
 ### Option 1: Use Supabase Edge Functions (Recommended)
+
 - Migrate backend from Vercel to Supabase Edge Functions
 - Edge Functions handle CORS preflight much faster
 - Would eliminate the timeout issue
 
 ### Option 2: Add CORS Proxy Layer
+
 - Deploy a proxy (Cloudflare Worker, nginx) that handles CORS
 - Serves frontend and proxies API requests through same origin
 - Eliminates need for browser CORS entirely
 
 ### Option 3: Temporary Workaround
+
 - Frontend can use server-side API calls (if backend hosted elsewhere)
 - Or use fetch with `no-cors` mode for specific requests
 - Or use form submission instead of XHR
@@ -83,6 +93,7 @@ Expected: 200/201 with JWT token
 ## 📊 Deployment Verification
 
 ### Health Checks
+
 ```bash
 # API Health
 curl https://iso-lemon.vercel.app/api/health
@@ -133,14 +144,14 @@ Database (Supabase PostgreSQL)
 
 ## 🚀 Deployment Timeline
 
-| Component | Date | Status |
-|-----------|------|--------|
-| GitHub Pages Setup | May 9-10, 2026 | ✅ Complete |
-| Vercel Backend Setup | May 10, 2026 | ✅ Complete |
-| Supabase Database | May 10, 2026 | ✅ Configured |
-| CORS Configuration | May 10, 2026 | ⚠️ Partial (infrastructure limitation) |
-| Database Seeding | May 10, 2026 | 📋 Pending (manual SQL needed) |
-| Login Testing | May 10, 2026 | 📋 Pending (requires seeded DB) |
+| Component            | Date           | Status                                 |
+| -------------------- | -------------- | -------------------------------------- |
+| GitHub Pages Setup   | May 9-10, 2026 | ✅ Complete                            |
+| Vercel Backend Setup | May 10, 2026   | ✅ Complete                            |
+| Supabase Database    | May 10, 2026   | ✅ Configured                          |
+| CORS Configuration   | May 10, 2026   | ⚠️ Partial (infrastructure limitation) |
+| Database Seeding     | May 10, 2026   | 📋 Pending (manual SQL needed)         |
+| Login Testing        | May 10, 2026   | 📋 Pending (requires seeded DB)        |
 
 ---
 
@@ -150,7 +161,7 @@ The full-stack QMS system is **fully deployed and operational**. All infrastruct
 
 1. **Seed database with test users** (SQL provided)
 2. **Test login endpoint** (via curl, until CORS resolved)
-3. *Optional:* Migrate to Supabase Edge Functions to resolve CORS issue
+3. _Optional:_ Migrate to Supabase Edge Functions to resolve CORS issue
 
 The backend and API are production-ready. The frontend is production-ready. The database is configured and connected. The system is ready for full integration testing once test data is seeded.
 
@@ -159,6 +170,7 @@ The backend and API are production-ready. The frontend is production-ready. The 
 ## 📞 Support
 
 For questions or issues:
+
 1. Check [DATABASE_SEEDING.md](./DATABASE_SEEDING.md) for setup instructions
 2. Review backend logs: Check Vercel deployment logs
 3. Check database: Verify tables exist in Supabase console
