@@ -14,6 +14,8 @@ export default function LoginPage() {
   const loading = useAuthStore((state) => state.loading);
   const language = useUiStore((state) => state.language);
   const setLanguage = useUiStore((state) => state.setLanguage);
+  const theme = useUiStore((state) => state.theme);
+  const setTheme = useUiStore((state) => state.setTheme);
 
   const text = (fr, en) => t(language, fr, en);
 
@@ -37,23 +39,33 @@ export default function LoginPage() {
       <div className="grid w-full gap-6 md:grid-cols-2">
         <Card className="p-8">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">ISO 9001</p>
-          <h1 className="mt-2 text-4xl font-semibold text-slate-950">{text("Console de Projet SGQ", "QMS Project Console")}</h1>
+          <h1 className="mt-2 text-4xl font-semibold text-slate-950">{text("Suivi qualite ESI", "ESI quality tracking")}</h1>
           <p className="mt-4 text-slate-600 leading-relaxed">
-            {text("Coordonnez les processus, projets, taches et preuves de conformite pour ESI.", "Coordinate processes, projects, tasks, and compliance evidence for ESI.")}
+            {text("Un espace simple pour suivre les processus, projets, taches et documents qualite.", "A simple workspace for processes, projects, tasks, and quality documents.")}
           </p>
-          <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {text("Les identifiants de demonstration sont pre-remplis.", "Demo credentials are pre-filled.")}
+          <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {text("Les identifiants de test sont deja renseignes.", "Test credentials are already filled in.")}
           </div>
         </Card>
 
         <Card className="p-8">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <label className="sr-only">Theme</label>
+            <select
+              aria-label="Theme"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              className="saas-input w-28 px-2 py-1 text-sm"
+            >
+              <option value="light">{text("Clair", "Light")}</option>
+              <option value="dark">{text("Sombre", "Dark")}</option>
+            </select>
             <label className="sr-only">Language</label>
             <select
               aria-label="Language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="rounded-md border px-2 py-1 text-sm"
+              className="saas-input w-24 px-2 py-1 text-sm"
             >
               <option value="fr">{languageLabels.fr}</option>
               <option value="en">{languageLabels.en}</option>

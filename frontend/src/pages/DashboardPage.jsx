@@ -125,9 +125,9 @@ export default function DashboardPage() {
   const veracityDistribution = requirementAssessments?.veracityDistribution || [];
 
   const roleSubtitle = {
-    ADMIN: text("Vue de gouvernance avec les signaux de qualite et de retard globaux.", "Governance view with global quality and delay signals."),
-    PROJECT_MANAGER: text("Vue d'execution focalisee sur la livraison des projets et les goulots.", "Execution view focused on project delivery and bottlenecks."),
-    TEAM_MEMBER: text("Vue personnelle focalisee sur le flux des taches et les priorites.", "Personal workbench view focused on task flow and priorities."),
+    ADMIN: text("Suivi global des projets, taches et alertes qualite.", "Overview of projects, tasks, and quality alerts."),
+    PROJECT_MANAGER: text("Suivi des projets, taches et points de blocage.", "Projects, tasks, and blockers at a glance."),
+    TEAM_MEMBER: text("Vos taches et priorites en cours.", "Your current tasks and priorities."),
   };
   const snapshotTime = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -137,15 +137,15 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title={text("Tableau de bord de pilotage executive", "Executive Pilotage Dashboard")}
+        title={text("Tableau de bord", "Dashboard")}
         subtitle={roleSubtitle[role] || roleSubtitle.TEAM_MEMBER}
       />
 
       <section className="surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{text("Photo de controle", "Control Snapshot")}</p>
-            <p className="mt-1 text-sm text-slate-700">{text("Vue de decision en temps reel synchronisee pour les revues de gouvernance et le suivi operationnel.", "Live decision view synchronized for governance reviews and operational follow-up.")}</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{text("Etat actuel", "Current status")}</p>
+            <p className="mt-1 text-sm text-slate-700">{text("Resume des donnees disponibles dans le systeme.", "Summary of the records currently in the system.")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="blue">{text("Role", "Role")}: {role.replaceAll("_", " ")}</Badge>
@@ -162,8 +162,8 @@ export default function DashboardPage() {
         <section className="saas-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-900">{text("Fenetre de temps du responsable", "Manager Time Window")}</p>
-              <p className="text-xs text-slate-500">{text("Changer l'etendue de l'analyse pour les decisions de planification et de pilotage.", "Switch analysis scope for planning and steering decisions.")}</p>
+              <p className="text-sm font-medium text-slate-900">{text("Periode", "Period")}</p>
+              <p className="text-xs text-slate-500">{text("Filtrer les indicateurs par periode.", "Filter indicators by period.")}</p>
             </div>
             <Select className="w-full sm:w-56" value={period} onChange={(event) => setPeriod(event.target.value)}>
               <option value="week">{text("7 derniers jours", "Last 7 days")}</option>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
       {isProjectManager ? (
         <section className="grid gap-4 xl:grid-cols-[1fr_1.4fr]">
           <Card className="p-5">
-            <CardHeader title={text("Sante de la decision", "Decision Health")} subtitle={text("Score de pilotage composite pour l'examen de direction.", "Composite steering score for management review.")} />
+            <CardHeader title={text("Score qualite", "Quality score")} subtitle={text("Score calcule a partir des indicateurs disponibles.", "Score based on available indicators.")} />
             {decisionHealth ? (
               <>
                 <div className="mt-2 flex items-end gap-3">
@@ -209,12 +209,12 @@ export default function DashboardPage() {
                 </p>
               </>
             ) : (
-              <p className="text-sm text-slate-500">{text("Score de decision non disponible.", "Decision score not available.")}</p>
+              <p className="text-sm text-slate-500">{text("Score non disponible.", "Score not available.")}</p>
             )}
           </Card>
 
           <Card className="p-5">
-            <CardHeader title={text("Plan de pilotage recommande", "Recommended Steering Plan")} subtitle={text("Actions prioritisees generees a partir des signaux de risque en direct.", "Prioritized actions generated from live risk signals.")} />
+            <CardHeader title={text("Actions recommandees", "Recommended actions")} subtitle={text("Actions a verifier selon les donnees actuelles.", "Actions to review based on current records.")} />
             <div className="space-y-2">
               {recommendedPlan.length ? (
                 recommendedPlan.map((item, index) => (
@@ -616,7 +616,7 @@ export default function DashboardPage() {
 
       {role !== "TEAM_MEMBER" ? (
         <section className="saas-card p-5">
-          <CardHeader title={isProjectManager ? text("Indicateurs KPI (Vue responsable)", "KPI Indicators (Manager View)") : text("Indicateurs KPI", "KPI Indicators")} subtitle={isProjectManager ? text("Cibles au niveau du processus, pour soutenir le pilotage du projet et la prioritarisation des CAPA.", "Process-level targets, to support project steering and CAPA prioritization.") : text("Cibles et dotations au niveau du processus.", "Process-level targets and attainment.")} />
+          <CardHeader title={isProjectManager ? text("Indicateurs KPI", "KPI indicators") : text("Indicateurs KPI", "KPI indicators")} subtitle={isProjectManager ? text("Cibles et resultats par processus.", "Targets and results by process.") : text("Cibles et resultats par processus.", "Targets and results by process.")} />
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-slate-500">

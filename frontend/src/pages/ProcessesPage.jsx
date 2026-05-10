@@ -109,8 +109,8 @@ export default function ProcessesPage() {
   };
 
   const applyProcessTemplate = (template) => {
-    if (template === "procurement") {
-      setForm({
+    const templates = {
+      procurement: {
         name: text("Controle des achats", "Procurement Control"),
         description: text(
           "Controler la selection fournisseur, la validation des achats et la reception.",
@@ -120,12 +120,8 @@ export default function ProcessesPage() {
         inputs: text("Demande d'achat, Specification, Budget", "Purchase request, Specification, Budget"),
         outputs: text("Commande approuvee, Bon de livraison, Rapport d'acceptation", "Approved order, Delivery record, Acceptance report"),
         indicators: text("Livraison a temps, Taux de conformite fournisseur", "On-time delivery, Supplier conformity rate"),
-      });
-      return;
-    }
-
-    if (template === "audit") {
-      setForm({
+      },
+      audit: {
         name: text("Processus d'audit interne", "Internal Audit Process"),
         description: text(
           "Planifier les audits internes, consolider les constats et suivre les actions.",
@@ -135,7 +131,44 @@ export default function ProcessesPage() {
         inputs: text("Plan d'audit, Constats precedents, Documentation processus", "Audit plan, Previous findings, Process documentation"),
         outputs: text("Rapport d'audit, Registre NC, Demandes CAPA", "Audit report, Non-conformity log, CAPA requests"),
         indicators: text("Taux de realisation des audits, Taux de cloture des constats", "Audit completion rate, Finding closure rate"),
-      });
+      },
+      training: {
+        name: text("Gestion des competences", "Competence Management"),
+        description: text(
+          "Planifier les formations, suivre les habilitations et verifier l'efficacite des actions.",
+          "Plan training, track qualifications, and verify training effectiveness.",
+        ),
+        responsiblePerson: text("Responsable RH / Qualite", "HR / Quality Manager"),
+        inputs: text("Matrice de competence, Besoins formation, Evaluations", "Competence matrix, Training needs, Evaluations"),
+        outputs: text("Plan formation, Feuilles presence, Evaluation efficacite", "Training plan, Attendance sheets, Effectiveness review"),
+        indicators: text("Formations realisees, Efficacite verifiee, Ecarts competence", "Training completion, Verified effectiveness, Competence gaps"),
+      },
+      documentControl: {
+        name: text("Maitrise documentaire", "Document Control"),
+        description: text(
+          "Gerer la creation, validation, diffusion et retrait des documents controles.",
+          "Manage creation, approval, distribution, and withdrawal of controlled documents.",
+        ),
+        responsiblePerson: text("Document controller", "Document controller"),
+        inputs: text("Demande de modification, Procedure brouillon, Liste diffusion", "Change request, Draft procedure, Distribution list"),
+        outputs: text("Document approuve, Historique versions, Preuve diffusion", "Approved document, Version history, Distribution proof"),
+        indicators: text("Delai approbation, Documents obsoletes, Taux diffusion", "Approval lead time, Obsolete documents, Distribution rate"),
+      },
+      customerFeedback: {
+        name: text("Traitement des reclamations", "Complaint Handling"),
+        description: text(
+          "Enregistrer les reclamations, analyser les causes et suivre les reponses clients.",
+          "Log complaints, analyze causes, and track customer responses.",
+        ),
+        responsiblePerson: text("Responsable relation client", "Customer relations manager"),
+        inputs: text("Reclamation, Preuve client, Historique livraison", "Complaint, Customer evidence, Delivery history"),
+        outputs: text("Reponse client, Analyse cause, Action corrective", "Customer response, Cause analysis, Corrective action"),
+        indicators: text("Delai reponse, Taux recurrence, Satisfaction apres traitement", "Response time, Recurrence rate, Post-resolution satisfaction"),
+      },
+    };
+
+    if (templates[template]) {
+      setForm(templates[template]);
       return;
     }
 
@@ -214,6 +247,15 @@ export default function ProcessesPage() {
             </Button>
             <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("audit")}>
               {text("Modele audit", "Use Audit Template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("training")}>
+              {text("Modele competence", "Competence Template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("documentControl")}>
+              {text("Modele documents", "Document Template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("customerFeedback")}>
+              {text("Modele reclamations", "Complaint Template")}
             </Button>
             <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("reset")}>
               {text("Reinitialiser", "Reset")}

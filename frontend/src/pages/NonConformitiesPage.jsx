@@ -54,6 +54,30 @@ export default function NonConformitiesPage() {
       ),
       severity: "CRITICAL",
     },
+    document: {
+      title: text("Document obsolete utilise", "Obsolete document used"),
+      description: text(
+        "Une version obsolete d'une procedure a ete utilisee. Identifier les lots ou dossiers impactes.",
+        "An obsolete procedure version was used. Identify affected lots or records.",
+      ),
+      severity: "HIGH",
+    },
+    training: {
+      title: text("Competence non verifiee", "Competence not verified"),
+      description: text(
+        "Une activite critique a ete realisee sans preuve de competence ou d'habilitation a jour.",
+        "A critical activity was performed without current competence or qualification evidence.",
+      ),
+      severity: "MEDIUM",
+    },
+    complaint: {
+      title: text("Reclamation recurrente non traitee", "Recurring complaint not addressed"),
+      description: text(
+        "Une reclamation similaire est reapparue sans action corrective efficace documentee.",
+        "A similar complaint recurred without documented effective corrective action.",
+      ),
+      severity: "HIGH",
+    },
   };
 
   const queryParams = useMemo(() => {
@@ -210,7 +234,7 @@ export default function NonConformitiesPage() {
         <Card className="p-5">
           <CardHeader
             title={text("Registre ouvert", "Open Register")}
-            subtitle={text("Vue de gouvernance des ecarts par severite et statut du cycle de vie.", "Governance view of deviations by severity and lifecycle status.")}
+            subtitle={text("Ecarts classes par severite et statut.", "Findings grouped by severity and status.")}
             action={<Badge tone="amber">{state.data.length}</Badge>}
           />
 
@@ -297,6 +321,15 @@ export default function NonConformitiesPage() {
             </Button>
             <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyNcTemplate("delivery")}>
               {text("Modele retard critique", "Critical delay template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyNcTemplate("document")}>
+              {text("Modele document", "Document template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyNcTemplate("training")}>
+              {text("Modele competence", "Competence template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyNcTemplate("complaint")}>
+              {text("Modele reclamation", "Complaint template")}
             </Button>
             <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyNcTemplate("reset")}>
               {text("Reinitialiser", "Reset")}

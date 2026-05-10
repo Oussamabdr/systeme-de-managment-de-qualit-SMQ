@@ -23,6 +23,7 @@ export default function ProcessDetailsPage() {
   const canEditAssessment = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER";
   const [state, setState] = useState({ loading: true, data: null, error: "" });
   const [assessment, setAssessment] = useState([]);
+  const [savedAssessment, setSavedAssessment] = useState([]);
   const [assessmentMeta, setAssessmentMeta] = useState({
     loading: true,
     saving: false,
@@ -31,7 +32,7 @@ export default function ProcessDetailsPage() {
     summary: null,
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOnly, setSelectedOnly] = useState(true);
+  const [selectedOnly, setSelectedOnly] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -47,6 +48,7 @@ export default function ProcessDetailsPage() {
 
         setState({ loading: false, data: processData.data, error: "" });
         setAssessment(assessmentData.data.requirements || []);
+        setSavedAssessment(assessmentData.data.requirements || []);
         setAssessmentMeta({
           loading: false,
           saving: false,
@@ -114,6 +116,34 @@ export default function ProcessDetailsPage() {
     () => assessment.filter((item) => item.selected).length,
     [assessment],
   );
+
+  const hasActiveFilters = !!searchTerm.trim() || selectedOnly;
+
+  const hasUnsavedChanges = useMemo(() => {
+    const normalize = (items) =>
+      [...items]
+        .map((item) => ({
+          code: item.code,
+          selected: !!item.selected,
+          score: Number(item.score || 0),
+          rate: item.rate === null || item.rate === undefined || item.rate === "" ? null : Number(item.rate),
+          veracityLevel: item.veracityLevel || "FALSE",
+          notes: item.notes || "",
+        }))
+        .sort((a, b) => String(a.code).localeCompare(String(b.code)));
+
+    return JSON.stringify(normalize(assessment)) !== JSON.stringify(normalize(savedAssessment));
+  }, [assessment, savedAssessment]);
+
+  const lastSavedAt = useMemo(() => {
+    const timestamps = assessment
+      .map((item) => item.updatedAt)
+      .filter(Boolean)
+      .map((value) => new Date(value).getTime())
+      .filter((value) => Number.isFinite(value));
+    if (!timestamps.length) return null;
+    return new Date(Math.max(...timestamps));
+  }, [assessment]);
 
   const process = state.data || {
     name: "",
@@ -186,6 +216,7 @@ export default function ProcessDetailsPage() {
       const { data } = await api.put(`/processes/${processId}/assessment`, payload);
 
       setAssessment(data.data.requirements || []);
+      setSavedAssessment(data.data.requirements || []);
       setAssessmentMeta({
         loading: false,
         saving: false,
@@ -303,7 +334,7 @@ export default function ProcessDetailsPage() {
                 <Button variant="subtle" onClick={() => selectByVeracity("FALSE")}>
                   Selectionner Faux
                 </Button>
-                <Button onClick={saveAssessment} disabled={assessmentMeta.saving || assessmentMeta.loading}>
+                <Button onClick={saveAssessment} disabled={assessmentMeta.saving || assessmentMeta.loading || !hasUnsavedChanges}>
                   {assessmentMeta.saving ? "Enregistrement..." : "Enregistrer"}
                 </Button>
               </div>
@@ -314,7 +345,24 @@ export default function ProcessDetailsPage() {
             <Badge tone="slate">Selectionnes: {selectedCount}</Badge>
             <Badge tone="slate">Affiches: {filteredAssessment.length}</Badge>
             <Badge tone="slate">Total: {assessment.length}</Badge>
+            {hasUnsavedChanges ? <Badge tone="amber">Modifications non enregistrees</Badge> : <Badge tone="green">A jour</Badge>}
           </div>
+
+          {hasActiveFilters ? (
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <span>Filtres actifs: certains criteres peuvent etre masques.</span>
+              <button
+                type="button"
+                className="font-medium underline"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedOnly(false);
+                }}
+              >
+                Reinitialiser les filtres
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -340,6 +388,11 @@ export default function ProcessDetailsPage() {
 
         {assessmentMeta.error ? <p className="mt-4 text-sm text-rose-700">{assessmentMeta.error}</p> : null}
         {assessmentMeta.success ? <p className="mt-4 text-sm text-emerald-700">{assessmentMeta.success}</p> : null}
+        {lastSavedAt ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Derniere sauvegarde: {lastSavedAt.toLocaleDateString()} {lastSavedAt.toLocaleTimeString()}
+          </p>
+        ) : null}
 
         <div className="mt-5 overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">

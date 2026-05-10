@@ -98,6 +98,30 @@ export default function TasksPage() {
       ),
       dueInDays: 10,
     },
+    training: {
+      title: text("Verifier l'efficacite formation", "Verify training effectiveness"),
+      description: text(
+        "Comparer les resultats d'evaluation avec les objectifs de competence definis.",
+        "Compare evaluation results with defined competence objectives.",
+      ),
+      dueInDays: 12,
+    },
+    risk: {
+      title: text("Mettre a jour le registre des risques", "Update risk register"),
+      description: text(
+        "Revoir les risques processus, le niveau residuel et les actions de traitement.",
+        "Review process risks, residual level, and treatment actions.",
+      ),
+      dueInDays: 9,
+    },
+    managementReview: {
+      title: text("Preparer les donnees de revue", "Prepare review inputs"),
+      description: text(
+        "Rassembler KPI, etat CAPA, resultats audit et points ouverts pour la revue.",
+        "Collect KPIs, CAPA status, audit results, and open points for review.",
+      ),
+      dueInDays: 15,
+    },
   };
 
   const load = async () => {
@@ -325,6 +349,15 @@ export default function TasksPage() {
             </Button>
             <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("control")}>
               {text("Modele controle documentaire", "Document control template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("training")}>
+              {text("Modele formation", "Training template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("risk")}>
+              {text("Modele risques", "Risk template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("managementReview")}>
+              {text("Modele revue", "Review template")}
             </Button>
             <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyTaskTemplate("reset")}>
               {text("Reinitialiser", "Reset")}

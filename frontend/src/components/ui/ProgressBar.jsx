@@ -9,7 +9,7 @@ export default function ProgressBar({ value = 0, tone = "emerald", className = "
   };
 
   return (
-    <div className={`w-full overflow-hidden rounded-full bg-slate-100 ${heightClass} ${className}`}>
+    <div className={`progress-track w-full overflow-hidden rounded-full ${heightClass} ${className}`}>
       <div
         className={`h-full rounded-full bg-linear-to-r ${tones[tone] || tones.emerald} transition-all duration-300`}
         style={{ width: `${safeValue}%` }}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { Input, Select } from "../ui/Input";
 import Button from "../ui/Button";
@@ -10,49 +10,49 @@ import { languageLabels, t } from "../../utils/i18n";
 const getNavItems = (language) => [
   {
     to: "/dashboard",
-    label: t(language, "Tableau de bord d'executive", "Executive Dashboard"),
+    label: t(language, "Tableau de bord", "Dashboard"),
     icon: LayoutDashboard,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
     to: "/projects",
-    label: t(language, "Portefeuille de programmes", "Program Portfolio"),
+    label: t(language, "Projets", "Projects"),
     icon: FolderKanban,
     roles: ["ADMIN", "PROJECT_MANAGER"],
   },
   {
     to: "/processes",
-    label: t(language, "Architecture des processus", "Process Architecture"),
+    label: t(language, "Processus", "Processes"),
     icon: GitFork,
     roles: ["ADMIN", "PROJECT_MANAGER"],
   },
   {
     to: "/tasks",
-    label: t(language, "Tableau d'execution", "Execution Board"),
+    label: t(language, "Taches", "Tasks"),
     icon: ListTodo,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
     to: "/documents",
-    label: t(language, "Coffre-fort des preuves", "Evidence Vault"),
+    label: t(language, "Documents", "Documents"),
     icon: FileText,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
   },
   {
     to: "/non-conformities",
-    label: t(language, "Registre des non-conformites", "NC Register"),
+    label: t(language, "Non-conformites", "Non-conformities"),
     icon: ShieldAlert,
     roles: ["ADMIN", "PROJECT_MANAGER", "CAQ"],
   },
   {
     to: "/corrective-actions",
-    label: t(language, "Commande CAPA", "CAPA Command"),
+    label: t(language, "Actions CAPA", "CAPA actions"),
     icon: ClipboardCheck,
     roles: ["ADMIN", "PROJECT_MANAGER", "CAQ"],
   },
   {
     to: "/notifications",
-    label: t(language, "Alertes de risque", "Risk Alerts"),
+    label: t(language, "Alertes", "Alerts"),
     icon: Bell,
     roles: ["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"],
     hidden: true,
@@ -60,14 +60,14 @@ const getNavItems = (language) => [
 ];
 
 const getTitleMap = (language) => ({
-  "/dashboard": t(language, "Tableau de bord d'executive", "Executive Dashboard"),
-  "/projects": t(language, "Portefeuille de programmes", "Program Portfolio"),
-  "/processes": t(language, "Architecture des processus", "Process Architecture"),
-  "/tasks": t(language, "Tableau d'execution", "Execution Board"),
-  "/documents": t(language, "Coffre-fort des preuves", "Evidence Vault"),
-  "/non-conformities": t(language, "Registre des non-conformites", "Non-Conformity Register"),
-  "/corrective-actions": t(language, "Centre de commande CAPA", "CAPA Command Center"),
-  "/notifications": t(language, "Centre d'alertes de risque", "Risk Alerts Center"),
+  "/dashboard": t(language, "Tableau de bord", "Dashboard"),
+  "/projects": t(language, "Projets", "Projects"),
+  "/processes": t(language, "Processus", "Processes"),
+  "/tasks": t(language, "Taches", "Tasks"),
+  "/documents": t(language, "Documents", "Documents"),
+  "/non-conformities": t(language, "Non-conformites", "Non-conformities"),
+  "/corrective-actions": t(language, "Actions CAPA", "CAPA actions"),
+  "/notifications": t(language, "Alertes", "Alerts"),
 });
 
 export default function AppLayout() {
@@ -77,6 +77,8 @@ export default function AppLayout() {
   const logout = useAuthStore((state) => state.logout);
   const language = useUiStore((state) => state.language);
   const setLanguage = useUiStore((state) => state.setLanguage);
+  const theme = useUiStore((state) => state.theme);
+  const setTheme = useUiStore((state) => state.setTheme);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const text = (fr, en) => t(language, fr, en);
@@ -99,9 +101,9 @@ export default function AppLayout() {
     <div className="si-shell mx-auto grid min-h-screen max-w-385 grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[260px_1fr]">
       <aside className="surface h-fit p-5 lg:sticky lg:top-5">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{text("ESI SGQ", "ESI QMS")}</p>
-          <h1 className="mt-2 text-[22px] font-semibold text-slate-900">{text("Plateforme de pilotage SI", "SI Pilotage Hub")}</h1>
-          <p className="mt-2 text-sm text-slate-500">{text("Controle operationnel pour la gouvernance ISO 9001, les CAPA et le pilotage des processus.", "Operational control for ISO 9001 governance, CAPA, and process steering.")}</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{text("ESI SGQ", "ESI QMS")}</p>
+          <h1 className="mt-2 text-[21px] font-semibold text-slate-900">{text("Suivi qualite", "Quality tracking")}</h1>
+          <p className="mt-2 text-sm text-slate-500">{text("Projets, processus, taches et actions qualite.", "Projects, processes, tasks, and quality actions.")}</p>
         </div>
 
         <nav className="mt-8 flex flex-col gap-1.5">
@@ -126,7 +128,7 @@ export default function AppLayout() {
         <div className="mt-8 rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-sm">
           <p className="font-medium text-slate-900">{user?.fullName}</p>
           <p className="mt-0.5 text-xs uppercase tracking-wide text-slate-500">{user?.role?.replaceAll("_", " ")}</p>
-          <p className="mt-2 text-xs text-slate-500">{text("Le role de l'espace de travail controle votre perimetre de gouvernance qualite.", "Workspace role controls your quality governance perimeter.")}</p>
+          <p className="mt-2 text-xs text-slate-500">{text("Les acces dependent du role attribue au compte.", "Access depends on the role assigned to the account.")}</p>
           <Button variant="subtle" className="mt-3 w-full" onClick={onLogout}>
             {text("Deconnexion", "Sign out")}
           </Button>
@@ -136,9 +138,9 @@ export default function AppLayout() {
       <main className="space-y-5 pb-10">
         <header className="surface flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{text("Operations de qualite / ", "Quality Operations / ")}{pageTitle}</p>
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{text("Qualite / ", "Quality / ")}{pageTitle}</p>
             <h2 className="text-xl font-semibold text-slate-900">{pageTitle}</h2>
-            <p className="text-sm text-slate-500">{text("Gerer les operations ISO 9001 avec tracabilite, responsabilite et clarte de pilotage.", "Manage ISO 9001 operations with traceability, accountability, and steering clarity.")}</p>
+            <p className="text-sm text-slate-500">{text("Suivi des donnees ISO 9001 et des actions en cours.", "Track ISO 9001 records and current actions.")}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -157,6 +159,25 @@ export default function AppLayout() {
                 <option key={value} value={value}>{label}</option>
               ))}
             </Select>
+
+            <div className="hidden items-center rounded-lg border border-slate-200/80 bg-slate-50 p-1 sm:flex">
+              <button
+                className={`theme-choice ${theme === "light" ? "theme-choice-active" : ""}`}
+                onClick={() => setTheme("light")}
+                aria-label={text("Theme clair", "Light theme")}
+                type="button"
+              >
+                <Sun size={15} />
+              </button>
+              <button
+                className={`theme-choice ${theme === "dark" ? "theme-choice-active" : ""}`}
+                onClick={() => setTheme("dark")}
+                aria-label={text("Theme sombre", "Dark theme")}
+                type="button"
+              >
+                <Moon size={15} />
+              </button>
+            </div>
 
             <button className="saas-btn saas-btn-subtle h-10 w-10 p-0" aria-label={text("Notifications", "Notifications")}>
               <Bell size={16} />
@@ -186,13 +207,34 @@ export default function AppLayout() {
                 ))}
               </Select>
             </div>
+            <div className="px-2 pb-2">
+              <label className="text-xs uppercase tracking-[0.14em] text-slate-500">{text("Theme", "Theme")}</label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  className={`saas-btn saas-btn-subtle gap-2 text-sm ${theme === "light" ? "theme-choice-active" : ""}`}
+                  onClick={() => setTheme("light")}
+                  type="button"
+                >
+                  <Sun size={15} />
+                  {text("Clair", "Light")}
+                </button>
+                <button
+                  className={`saas-btn saas-btn-subtle gap-2 text-sm ${theme === "dark" ? "theme-choice-active" : ""}`}
+                  onClick={() => setTheme("dark")}
+                  type="button"
+                >
+                  <Moon size={15} />
+                  {text("Sombre", "Dark")}
+                </button>
+              </div>
+            </div>
             <button className="saas-btn saas-btn-ghost w-full justify-start text-sm" onClick={onLogout}>
               {text("Deconnexion", "Logout")}
             </button>
           </div>
         ) : null}
 
-        <div className="saas-page">
+        <div key={location.pathname} className="saas-page page-transition">
           <Outlet />
         </div>
       </main>

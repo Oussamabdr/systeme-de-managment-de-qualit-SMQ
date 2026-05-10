@@ -1,9 +1,9 @@
 export default function StatCard({ title, value, hint, tone = "slate" }) {
   const tones = {
-    teal: "bg-emerald-50 text-emerald-800",
-    amber: "bg-amber-50 text-amber-800",
-    red: "bg-rose-50 text-rose-800",
-    slate: "bg-white text-slate-900",
+    teal: "stat-teal",
+    amber: "stat-amber",
+    red: "stat-red",
+    slate: "stat-slate",
   };
 
   return (

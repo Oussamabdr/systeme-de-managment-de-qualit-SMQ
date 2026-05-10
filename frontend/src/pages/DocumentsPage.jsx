@@ -70,17 +70,17 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={text("Coffre-fort des preuves et registres", "Evidence and Records Hub")} subtitle={text("Controlez, stockez et tracez les preuves de qualite entre les taches et les processus.", "Control, store, and trace quality evidence across tasks and processes.")} />
+      <PageHeader title={text("Documents qualite", "Quality documents")} subtitle={text("Documents rattaches aux taches et aux processus.", "Documents linked to tasks and processes.")} />
 
       <section className="saas-card p-5">
-        <CardHeader title={text("Telecharger un document", "Upload Document")} subtitle={text("Joindre les fichiers de preuve a un processus ou a une tache.", "Attach proof files to a process or task.")} />
+        <CardHeader title={text("Ajouter un document", "Add document")} subtitle={text("Joindre un fichier a une tache ou a un processus.", "Attach a file to a task or process.")} />
         {isTeamMember ? <p className="mt-2 text-xs text-slate-500">{text("Les membres de l'equipe ne peuvent telecharger que vers leurs taches assignees.", "Team members can upload only to their assigned tasks.")}</p> : null}
         {error ? <p className="mt-2 text-sm text-rose-700">{error}</p> : null}
         <form className="mt-3 grid gap-3 md:grid-cols-3" onSubmit={upload}>
           <div className="field-group">
-            <label className="field-label">{text("Fichier de preuve", "Evidence File")}</label>
+            <label className="field-label">{text("Fichier", "File")}</label>
             <Input type="file" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} required />
-            <p className="field-help">{text("Telecharger les preuves objectives (PDF, image ou document bureau).", "Upload objective evidence (PDF, image, or office document).")}</p>
+            <p className="field-help">{text("PDF, image ou document bureautique.", "PDF, image, or office document.")}</p>
           </div>
           <div className="field-group">
             <label className="field-label">{text("Tache liee", "Linked Task")}</label>
@@ -113,7 +113,7 @@ export default function DocumentsPage() {
 
       <Card className="p-0 overflow-hidden">
         <div className="px-5 pt-5">
-          <CardHeader title={text("Fichiers de preuve", "Evidence Files")} subtitle={text("Tracabilite centralisee des documents.", "Centralized document traceability.")} />
+          <CardHeader title={text("Documents", "Documents")} subtitle={text("Liste des fichiers enregistres.", "List of uploaded files.")} />
         </div>
         <Table headers={[text("Document", "Document"), text("Tache", "Task"), text("Processus", "Process"), text("Telecharge par", "Uploader")]}>
           {documents.map((doc) => (

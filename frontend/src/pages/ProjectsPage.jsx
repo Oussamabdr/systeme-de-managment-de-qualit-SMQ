@@ -99,25 +99,46 @@ export default function ProjectsPage() {
   };
 
   const applyProjectTemplate = (template) => {
-    if (template === "certification") {
-      setForm({
+    const templates = {
+      certification: {
         name: text("Preparation a la certification ISO 9001", "ISO 9001 Certification Readiness"),
         description: text(
           "Coordonner la fermeture des ecarts, la preparation des audits internes et les jalons de revue de direction.",
           "Coordinate gap closure, internal audit preparation, and management review milestones for certification readiness.",
         ),
-      });
-      return;
-    }
-
-    if (template === "supplier") {
-      setForm({
+      },
+      supplier: {
         name: text("Programme d'amelioration fournisseur", "Supplier Quality Improvement Program"),
         description: text(
           "Ameliorer la conformite fournisseur via audits, actions correctives et suivi des indicateurs.",
           "Improve supplier conformity through audit planning, corrective actions, and performance monitoring KPIs.",
         ),
-      });
+      },
+      documentControl: {
+        name: text("Mise a jour du systeme documentaire", "Document Control Update"),
+        description: text(
+          "Reviser les procedures, nettoyer les versions obsoletes et verifier les preuves de diffusion.",
+          "Review procedures, remove obsolete versions, and verify distribution evidence.",
+        ),
+      },
+      training: {
+        name: text("Plan de competence qualite", "Quality Competence Plan"),
+        description: text(
+          "Identifier les besoins de formation, planifier les sessions et verifier l'efficacite.",
+          "Identify training needs, schedule sessions, and verify effectiveness.",
+        ),
+      },
+      riskReview: {
+        name: text("Revue risques et opportunites", "Risk and Opportunity Review"),
+        description: text(
+          "Actualiser les risques processus, suivre les traitements et preparer les points de revue.",
+          "Refresh process risks, follow treatment actions, and prepare review inputs.",
+        ),
+      },
+    };
+
+    if (templates[template]) {
+      setForm(templates[template]);
       return;
     }
 
@@ -255,6 +276,15 @@ export default function ProjectsPage() {
                 </Button>
                 <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("supplier")}>
                   {text("Modele fournisseur", "Use Supplier Template")}
+                </Button>
+                <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("documentControl")}>
+                  {text("Modele documents", "Document Template")}
+                </Button>
+                <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("training")}>
+                  {text("Modele competence", "Competence Template")}
+                </Button>
+                <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("riskReview")}>
+                  {text("Modele risques", "Risk Template")}
                 </Button>
                 <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProjectTemplate("reset")}>
                   {text("Reinitialiser", "Reset")}

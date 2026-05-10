@@ -133,6 +133,82 @@ export default function CorrectiveActionsPage() {
     }
   }
 
+  const getFutureDate = (daysFromNow) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toISOString().slice(0, 10);
+  };
+
+  const capaTemplates = {
+    rootCause: {
+      title: text("Realiser une analyse cause racine", "Perform root-cause analysis"),
+      recommendation: text(
+        "Organiser une analyse 5 pourquoi, confirmer la cause avec les preuves disponibles et documenter les actions retenues.",
+        "Run a 5-why analysis, confirm the cause with available evidence, and document the selected actions.",
+      ),
+      severity: "HIGH",
+      source: "MANUAL",
+      dueInDays: 7,
+    },
+    containment: {
+      title: text("Mettre en place une action de confinement", "Implement containment action"),
+      recommendation: text(
+        "Isoler les elements impactes, informer les responsables et definir les controles temporaires.",
+        "Isolate affected items, inform responsible owners, and define temporary controls.",
+      ),
+      severity: "CRITICAL",
+      source: "MANUAL",
+      dueInDays: 3,
+    },
+    kpi: {
+      title: text("Corriger un KPI sous objectif", "Correct under-target KPI"),
+      recommendation: text(
+        "Analyser les causes de sous-performance, ajuster le plan d'action et verifier le resultat au prochain cycle.",
+        "Analyze underperformance causes, adjust the action plan, and verify results in the next cycle.",
+      ),
+      severity: "MEDIUM",
+      source: "KPI_DEVIATION",
+      dueInDays: 14,
+    },
+    overdueTask: {
+      title: text("Replanifier une tache en retard", "Reschedule overdue task"),
+      recommendation: text(
+        "Revoir la charge, confirmer le responsable et definir une nouvelle date de cloture controlee.",
+        "Review workload, confirm ownership, and define a controlled closure date.",
+      ),
+      severity: "MEDIUM",
+      source: "OVERDUE_TASK",
+      dueInDays: 5,
+    },
+    effectiveness: {
+      title: text("Verifier l'efficacite de l'action", "Verify action effectiveness"),
+      recommendation: text(
+        "Definir les criteres de verification, collecter les preuves et statuer sur l'efficacite.",
+        "Define verification criteria, collect evidence, and decide whether the action is effective.",
+      ),
+      severity: "LOW",
+      source: "MANUAL",
+      dueInDays: 21,
+    },
+  };
+
+  const applyCapaTemplate = (templateKey) => {
+    const template = capaTemplates[templateKey];
+    if (!template) {
+      setForm(initialForm);
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      title: template.title,
+      recommendation: template.recommendation,
+      severity: template.severity,
+      source: template.source,
+      dueDate: getFutureDate(template.dueInDays),
+    }));
+  };
+
   const totals = useMemo(() => {
     const list = state.data || [];
     return {
@@ -147,8 +223,8 @@ export default function CorrectiveActionsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title={text("Centre de commande CAPA", "CAPA Command Center")}
-        subtitle={text("Planifier, prioriser et suivre les actions correctives/preventives avec les controles de fermeture ISO.", "Plan, prioritize, and track corrective/preventive actions with ISO closure controls.")}
+        title={text("Actions CAPA", "CAPA actions")}
+        subtitle={text("Suivre les actions correctives et preventives.", "Track corrective and preventive actions.")}
       />
 
       {state.error ? <div className="saas-card p-4 text-rose-700">{state.error}</div> : null}
@@ -179,8 +255,8 @@ export default function CorrectiveActionsPage() {
       <section className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card className="p-5">
           <CardHeader
-            title={text("Portefeuille d'actions ouvert", "Open Action Portfolio")}
-            subtitle={text("Actions triees par priorite pour la direction qualite et l'escalade.", "Priority-sorted actions for quality steering and escalation.")}
+            title={text("Actions ouvertes", "Open actions")}
+            subtitle={text("Liste filtree par statut, severite et type.", "List filtered by status, severity, and type.")}
             action={<Badge tone="amber">{state.data.length}</Badge>}
           />
 
@@ -265,6 +341,26 @@ export default function CorrectiveActionsPage() {
               "Register a corrective/preventive action linked to a quality event.",
             )}
           />
+          <div className="mb-3 flex flex-wrap gap-2">
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("rootCause")}>
+              {text("Modele cause", "Cause template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("containment")}>
+              {text("Modele confinement", "Containment template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("kpi")}>
+              {text("Modele KPI", "KPI template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("overdueTask")}>
+              {text("Modele retard", "Overdue template")}
+            </Button>
+            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("effectiveness")}>
+              {text("Modele efficacite", "Effectiveness template")}
+            </Button>
+            <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyCapaTemplate("reset")}>
+              {text("Reinitialiser", "Reset")}
+            </Button>
+          </div>
           <form className="space-y-2" onSubmit={handleCreate}>
             <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
             <FormErrors errors={errors} />
