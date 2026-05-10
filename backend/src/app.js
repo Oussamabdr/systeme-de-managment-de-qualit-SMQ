@@ -30,7 +30,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
-app.use(morgan("dev"));
+// Temporarily disable morgan to test if it's causing timeouts
+// app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.resolve(process.cwd(), env.uploadDir)));
