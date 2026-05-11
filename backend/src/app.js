@@ -4,13 +4,35 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const env = require("./config/env");
+const prisma = require("./config/prisma");
+const { ensureFullSchema } = require("./utils/ensure-full-schema");
 const apiRoutes = require("./routes");
 const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
+// Minimal request tracing to diagnose hanging requests in serverless environment
+app.use((req, res, next) => {
+	const start = Date.now();
+	console.info(`REQ_START ${req.method} ${req.originalUrl || req.url}`);
+	res.on('finish', () => {
+		console.info(`REQ_END ${req.method} ${req.originalUrl || req.url} ${res.statusCode} ${Date.now() - start}ms`);
+	});
+	next();
+});
+
+app.use(async (_req, _res, next) => {
+	try {
+		await ensureFullSchema(prisma);
+		next();
+	} catch (error) {
+		next(error);
+	}
+});
+
 // OPTIONS handler at the very top - before all other middleware
-app.options("*", (req, res) => {
+// Express 5 no longer supports "*" as a route path string.
+app.options(/.*/, (req, res) => {
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");

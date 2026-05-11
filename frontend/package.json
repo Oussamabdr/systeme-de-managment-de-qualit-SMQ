@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/create-gh-pages-404.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node scripts/check-role-controls.mjs",
