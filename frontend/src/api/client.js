@@ -1,12 +1,20 @@
 import axios from "axios";
 
-const defaultApiBaseUrl =
-  typeof window !== "undefined" && window.location.hostname.includes("localhost")
-    ? "/api"
-    : "https://iso-lemon.vercel.app/api";
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname.includes("localhost") || window.location.hostname === "127.0.0.1");
+
+const defaultApiBaseUrl = isLocalhost ? "/api" : "https://iso-lemon.vercel.app/api";
+
+const configuredBaseUrl = import.meta.env.VITE_API_URL;
+
+// On static hosts like GitHub Pages, a relative "/api" points to GitHub and returns 405.
+const effectiveBaseUrl = !isLocalhost && configuredBaseUrl && configuredBaseUrl.startsWith("/")
+  ? defaultApiBaseUrl
+  : (configuredBaseUrl || defaultApiBaseUrl);
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || defaultApiBaseUrl,
+  baseURL: effectiveBaseUrl,
   timeout: 12000,
 });
 
