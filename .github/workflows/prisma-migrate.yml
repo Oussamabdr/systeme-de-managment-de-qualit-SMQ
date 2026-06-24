@@ -1,6 +1,8 @@
 name: Prisma Migrate (manual)
 on:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   migrate:
     runs-on: ubuntu-latest

@@ -3,7 +3,8 @@ name: Trigger Render Deploys
 on:
   push:
     branches: [main]
-
+permissions:
+  contents: write
 jobs:
   trigger-deploys:
     name: Trigger Render Deploys
