@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-CcuKhfm7.js";var t=e();function n({tone:e=`slate`,children:n}){let r={slate:`badge-slate`,green:`badge-green`,amber:`badge-amber`,red:`badge-red`,blue:`badge-blue`};return(0,t.jsx)(`span`,{className:`badge inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${r[e]||r.slate}`,children:n})}export{n as t};
