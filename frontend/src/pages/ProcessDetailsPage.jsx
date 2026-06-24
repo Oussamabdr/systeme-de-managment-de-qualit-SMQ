@@ -9,6 +9,7 @@ import { Table } from "../components/ui/Table";
 import { Input, Select, TextArea } from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { useAuthStore } from "../store/authStore";
+import AutoBpmnViewer from "../components/AutoBpmnViewer";
 
 const VERACITY_OPTIONS = [
   { value: "FALSE", label: "Faux" },
@@ -292,6 +293,11 @@ export default function ProcessDetailsPage() {
             );
           })}
         </Table>
+      </section>
+
+      <section className="saas-card p-5">
+        <CardHeader title="Process Flow" subtitle="Automated BPMN map generated from inputs, objectives, and outputs." />
+        <AutoBpmnViewer processData={process} />
       </section>
 
       <section className="saas-card p-5">
