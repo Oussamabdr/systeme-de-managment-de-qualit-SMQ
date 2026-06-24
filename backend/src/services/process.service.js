@@ -4,6 +4,7 @@ const { computeProcessProgressSnapshot } = require("./process-progress.service")
 
 function includeShape() {
   return {
+    department: true,
     projects: {
       include: {
         project: true,
@@ -24,6 +25,7 @@ function includeShape() {
 
 function listIncludeShape() {
   return {
+    department: true,
     _count: {
       select: { tasks: true, documents: true },
     },
@@ -38,9 +40,10 @@ function listIncludeShape() {
 }
 
 async function listProcesses() {
+  await ensureDefaultDepartments();
   const processes = await prisma.process.findMany({
     include: listIncludeShape(),
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ department: { name: "asc" } }, { createdAt: "desc" }],
   });
   return processes.map((process) => {
     const snapshot = computeProcessProgressSnapshot(process);
@@ -69,7 +72,41 @@ async function getProcessById(id) {
   };
 }
 
+async function ensureDefaultDepartments() {
+  const defaults = [
+    { code: "DPGR", name: "DPGR" },
+    { code: "DG", name: "DG" },
+    { code: "LABO", name: "Labo" },
+    { code: "DE", name: "DE" },
+  ];
+
+  await Promise.all(defaults.map((department) => prisma.department.upsert({
+    where: { code: department.code },
+    update: {},
+    create: department,
+  })));
+}
+
+async function listDepartments() {
+  await ensureDefaultDepartments();
+  return prisma.department.findMany({
+    include: { _count: { select: { processes: true } } },
+    orderBy: { name: "asc" },
+  });
+}
+
+async function createDepartment(data) {
+  const code = data.code || data.name;
+  return prisma.department.create({
+    data: {
+      name: data.name.trim(),
+      code: code.trim().toUpperCase().replace(/\s+/g, "_"),
+    },
+  });
+}
+
 async function createProcess(data) {
+  await ensureDefaultDepartments();
   return prisma.process.create({ data, include: includeShape() });
 }
 
@@ -85,6 +122,8 @@ async function deleteProcess(id) {
 
 module.exports = {
   listProcesses,
+  listDepartments,
+  createDepartment,
   getProcessById,
   createProcess,
   updateProcess,

@@ -5,6 +5,10 @@ const { validationSchemas } = require("../utils/validation");
 const { z } = require("zod");
 
 const processSchema = validationSchemas.process;
+const departmentSchema = z.object({
+  name: z.string().min(2).max(80),
+  code: z.string().min(1).max(20).optional(),
+});
 const assessmentSchema = z.object({
   items: z.array(
     z.object({
@@ -23,6 +27,25 @@ async function listProcesses(_req, res, next) {
   try {
     const data = await processService.listProcesses();
     res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listDepartments(_req, res, next) {
+  try {
+    const data = await processService.listDepartments();
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createDepartment(req, res, next) {
+  try {
+    const payload = departmentSchema.parse(req.body);
+    const data = await processService.createDepartment(payload);
+    res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -96,6 +119,8 @@ async function saveProcessAssessment(req, res, next) {
 
 module.exports = {
   listProcesses,
+  listDepartments,
+  createDepartment,
   getProcess,
   getProcessProgress,
   getProcessAssessment,

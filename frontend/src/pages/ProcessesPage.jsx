@@ -1,78 +1,95 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
 import { Card, CardHeader } from "../components/ui/Card";
-import { Input, TextArea } from "../components/ui/Input";
+import { Select } from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui/Table";
 import ProjectProgress from "../components/projects/ProjectProgress";
 import StatusBadge from "../components/ui/StatusBadge";
-import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
+import { useFormValidation } from "../hooks/useFormValidation";
 import { FormField, FormErrors, SuccessMessage } from "../components/form/FormField";
 import { useUiStore } from "../store/uiStore";
+import { useAuthStore } from "../store/authStore";
 import { t } from "../utils/i18n";
 
 const initialForm = {
   name: "",
   description: "",
   responsiblePerson: "",
+  departmentId: "",
   inputs: "",
   outputs: "",
   indicators: "",
 };
 
 function parseListInput(value) {
-  return value
-    .split(/[;,\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  return value.split(/[;,\n]/).map((item) => item.trim()).filter(Boolean);
 }
 
 function parseIndicatorsInput(raw) {
   const value = raw.trim();
   if (!value) return [];
-
-  if (value.startsWith("[")) {
-    return JSON.parse(value);
-  }
-
-  // Support simple comma/semicolon/newline-separated KPI names for faster entry.
-  return parseListInput(value).map((name) => ({
-    name,
-    target: 100,
-    current: 0,
-  }));
+  if (value.startsWith("[")) return JSON.parse(value);
+  return parseListInput(value).map((name) => ({ name, target: 100, current: 0 }));
 }
 
 export default function ProcessesPage() {
   const [processes, setProcesses] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [departmentName, setDepartmentName] = useState("");
   const [form, setForm] = useState(initialForm);
   const [successMessage, setSuccessMessage] = useState("");
-  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, handleApiError, clearErrors, hasErrors } = useFormValidation();
+  const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, handleApiError, clearErrors } = useFormValidation();
   const language = useUiStore((state) => state.language);
-  const text = (fr, en) => t(language, fr, en);
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "ADMIN";
+  const text = useCallback((fr, en) => t(language, fr, en), [language]);
 
-  const loadProcesses = async () => {
+  const loadProcesses = useCallback(async () => {
     try {
-      const [processRes, tasksRes] = await Promise.all([api.get("/processes"), api.get("/tasks")]);
-      setProcesses(processRes.data.data);
+      const [processRes, tasksRes, departmentRes] = await Promise.all([
+        api.get("/processes"),
+        api.get("/tasks"),
+        api.get("/processes/departments"),
+      ]);
+      setProcesses(processRes.data.data || []);
       setTasks(tasksRes.data.data || []);
+      setDepartments(departmentRes.data.data || []);
     } catch (err) {
       handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
     }
-  };
+  }, [handleApiError]);
 
   useEffect(() => {
     loadProcesses();
-  }, []);
+  }, [loadProcesses]);
 
   const totalTasks = useMemo(
     () => processes.reduce((sum, process) => sum + (process?._count?.tasks || 0), 0),
     [processes],
   );
+
+  const groupedProcesses = useMemo(() => {
+    const groups = new Map();
+    for (const department of departments) {
+      groups.set(department.id, { department, rows: [] });
+    }
+    for (const process of processes) {
+      const key = process.department?.id || "unclassified";
+      if (!groups.has(key)) {
+        groups.set(key, {
+          department: process.department || { id: "unclassified", name: text("Sans departement", "Unclassified") },
+          rows: [],
+        });
+      }
+      groups.get(key).rows.push(process);
+    }
+    return [...groups.values()].filter((group) => group.rows.length || group.department.id !== "unclassified");
+  }, [processes, departments, text]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -80,26 +97,25 @@ export default function ProcessesPage() {
     setSuccessMessage("");
 
     try {
-      const payload = {
+      setIsSubmitting(true);
+      await api.post("/processes", {
         name: form.name,
         description: form.description,
+        departmentId: form.departmentId || null,
         responsiblePerson: form.responsiblePerson,
         inputs: parseListInput(form.inputs),
         outputs: parseListInput(form.outputs),
         indicators: parseIndicatorsInput(form.indicators),
-      };
-
-      setIsSubmitting(true);
-      await api.post("/processes", payload);
+      });
       setForm(initialForm);
-      setSuccessMessage(text("Processus cree avec succes!", "Process created successfully!"));
+      setSuccessMessage(text("Processus cree avec succes.", "Process created successfully."));
       setTimeout(() => setSuccessMessage(""), 3000);
-      loadProcesses();
+      await loadProcesses();
     } catch (err) {
       if (err.response?.data?.fieldErrors) {
         handleApiError(err.response.data);
       } else if (err instanceof SyntaxError) {
-        handleApiError({ message: "Format des indicateurs invalide. Utilisez json ou une liste simple (taux de clôture, livraison à temps)", fieldErrors: { indicators: "Format invalide" } });
+        handleApiError({ message: text("Format des indicateurs invalide.", "Invalid indicator format."), fieldErrors: { indicators: "Invalid format" } });
       } else {
         handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
       }
@@ -108,165 +124,92 @@ export default function ProcessesPage() {
     }
   };
 
-  const applyProcessTemplate = (template) => {
-    const templates = {
-      procurement: {
-        name: text("Controle des achats", "Procurement Control"),
-        description: text(
-          "Controler la selection fournisseur, la validation des achats et la reception.",
-          "Control supplier selection, purchase validation, and reception acceptance criteria.",
-        ),
-        responsiblePerson: text("Responsable qualite", "Quality Manager"),
-        inputs: text("Demande d'achat, Specification, Budget", "Purchase request, Specification, Budget"),
-        outputs: text("Commande approuvee, Bon de livraison, Rapport d'acceptation", "Approved order, Delivery record, Acceptance report"),
-        indicators: text("Livraison a temps, Taux de conformite fournisseur", "On-time delivery, Supplier conformity rate"),
-      },
-      audit: {
-        name: text("Processus d'audit interne", "Internal Audit Process"),
-        description: text(
-          "Planifier les audits internes, consolider les constats et suivre les actions.",
-          "Plan and execute internal audits, consolidate findings, and monitor action closure.",
-        ),
-        responsiblePerson: "CAQ",
-        inputs: text("Plan d'audit, Constats precedents, Documentation processus", "Audit plan, Previous findings, Process documentation"),
-        outputs: text("Rapport d'audit, Registre NC, Demandes CAPA", "Audit report, Non-conformity log, CAPA requests"),
-        indicators: text("Taux de realisation des audits, Taux de cloture des constats", "Audit completion rate, Finding closure rate"),
-      },
-      training: {
-        name: text("Gestion des competences", "Competence Management"),
-        description: text(
-          "Planifier les formations, suivre les habilitations et verifier l'efficacite des actions.",
-          "Plan training, track qualifications, and verify training effectiveness.",
-        ),
-        responsiblePerson: text("Responsable RH / Qualite", "HR / Quality Manager"),
-        inputs: text("Matrice de competence, Besoins formation, Evaluations", "Competence matrix, Training needs, Evaluations"),
-        outputs: text("Plan formation, Feuilles presence, Evaluation efficacite", "Training plan, Attendance sheets, Effectiveness review"),
-        indicators: text("Formations realisees, Efficacite verifiee, Ecarts competence", "Training completion, Verified effectiveness, Competence gaps"),
-      },
-      documentControl: {
-        name: text("Maitrise documentaire", "Document Control"),
-        description: text(
-          "Gerer la creation, validation, diffusion et retrait des documents controles.",
-          "Manage creation, approval, distribution, and withdrawal of controlled documents.",
-        ),
-        responsiblePerson: text("Document controller", "Document controller"),
-        inputs: text("Demande de modification, Procedure brouillon, Liste diffusion", "Change request, Draft procedure, Distribution list"),
-        outputs: text("Document approuve, Historique versions, Preuve diffusion", "Approved document, Version history, Distribution proof"),
-        indicators: text("Delai approbation, Documents obsoletes, Taux diffusion", "Approval lead time, Obsolete documents, Distribution rate"),
-      },
-      customerFeedback: {
-        name: text("Traitement des reclamations", "Complaint Handling"),
-        description: text(
-          "Enregistrer les reclamations, analyser les causes et suivre les reponses clients.",
-          "Log complaints, analyze causes, and track customer responses.",
-        ),
-        responsiblePerson: text("Responsable relation client", "Customer relations manager"),
-        inputs: text("Reclamation, Preuve client, Historique livraison", "Complaint, Customer evidence, Delivery history"),
-        outputs: text("Reponse client, Analyse cause, Action corrective", "Customer response, Cause analysis, Corrective action"),
-        indicators: text("Delai reponse, Taux recurrence, Satisfaction apres traitement", "Response time, Recurrence rate, Post-resolution satisfaction"),
-      },
-    };
+  const createDepartment = async (event) => {
+    event.preventDefault();
+    if (!departmentName.trim()) return;
 
-    if (templates[template]) {
-      setForm(templates[template]);
-      return;
+    try {
+      const { data } = await api.post("/processes/departments", { name: departmentName });
+      setDepartments((prev) => [...prev, data.data].sort((a, b) => a.name.localeCompare(b.name)));
+      setDepartmentName("");
+      setSuccessMessage(text("Departement ajoute.", "Department added."));
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      handleApiError({ message: getErrorMessage(err), fieldErrors: {} });
     }
-
-    setForm(initialForm);
   };
 
   return (
     <div className="space-y-4">
       <PageHeader
         title={text("Architecture des processus", "Process Architecture")}
-        subtitle={text(`Carte de processus gouvernee avec ${totalTasks} taches d'execution liees.`, `Governed process map with ${totalTasks} linked execution tasks.`)}
+        subtitle={text(
+          `Classement par departement avec ${totalTasks} taches d'execution liees.`,
+          `Department grouped process map with ${totalTasks} linked execution tasks.`,
+        )}
       />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <Card className="p-0 overflow-hidden">
+        <Card className="overflow-hidden p-0">
           <div className="px-5 pt-5">
-            <CardHeader title={text("Bibliothèque des processus", "Process Library")} subtitle={text("Proprietaire, charge de travail et acces au detail.", "Owner, workload and drill-down access.")} />
+            <CardHeader
+              title={text("Processus par departement", "Processes by Department")}
+              subtitle={text("DPGR, DG, Labo, DE et departements ajoutes.", "DPGR, DG, Labo, DE, and added departments.")}
+            />
           </div>
-          <Table headers={["Name", "Responsible", "Tasks", "Progress", "Status", "Related Tasks", "Action"]}>
-            {processes.map((process) => (
-              <tr key={process.id}>
-                <td className="px-4 py-3 font-medium text-slate-900">{process.name}</td>
-                <td className="px-4 py-3 text-slate-600">{process.responsiblePerson}</td>
-                <td className="px-4 py-3 text-slate-600">{process?._count?.tasks || 0}</td>
-                <td className="px-4 py-3 text-slate-600">
-                  <ProjectProgress
-                    progress={process.progress || 0}
-                    status={process.computedStatus || "On Track"}
-                    completedTasks={process.completedTasks || 0}
-                    totalTasks={process.totalTasks || 0}
-                  />
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  <StatusBadge status={process.computedStatus || "On Track"} />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {tasks
-                      .filter((task) => task.processId === process.id)
-                      .slice(0, 3)
-                      .map((task) => (
-                        <span key={task.id} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
-                          {task.title}
-                        </span>
-                      ))}
-                    {tasks.filter((task) => task.processId === process.id).length > 3 ? (
-                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
-                        +{tasks.filter((task) => task.processId === process.id).length - 3} more
-                      </span>
-                    ) : null}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Link className="text-sm font-medium text-emerald-700 hover:text-emerald-800" to={`/processes/${process.id}`}>
-                      Open
-                    </Link>
-                    <Link className="text-sm font-medium text-slate-700 hover:text-slate-900" to={`/tasks?processId=${process.id}`}>
-                      View tasks
-                    </Link>
-                    <Link className="text-sm font-medium text-slate-700 hover:text-slate-900" to={`/tasks?processId=${process.id}&quickAssign=1`}>
-                      Quick assign
-                    </Link>
-                  </div>
-                </td>
-              </tr>
+          <div className="space-y-4 p-4">
+            {groupedProcesses.map((group) => (
+              <section key={group.department.id} className="rounded-lg border border-slate-200">
+                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
+                  <p className="font-semibold text-slate-900">{group.department.name}</p>
+                  <span className="text-xs text-slate-500">{group.rows.length} {text("processus", "processes")}</span>
+                </div>
+                <Table headers={["Name", "Responsible", "Tasks", "Progress", "Status", "Related Tasks", "Action"]}>
+                  {group.rows.map((process) => (
+                    <tr key={process.id}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{process.name}</td>
+                      <td className="px-4 py-3 text-slate-600">{process.responsiblePerson}</td>
+                      <td className="px-4 py-3 text-slate-600">{process?._count?.tasks || 0}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        <ProjectProgress
+                          progress={process.progress || 0}
+                          status={process.computedStatus || "On Track"}
+                          completedTasks={process.completedTasks || 0}
+                          totalTasks={process.totalTasks || 0}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        <StatusBadge status={process.computedStatus || "On Track"} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {tasks.filter((task) => task.processId === process.id).slice(0, 3).map((task) => (
+                            <span key={task.id} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
+                              {task.title}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Link className="text-sm font-medium text-emerald-700 hover:text-emerald-800" to={`/processes/${process.id}`}>
+                            Open
+                          </Link>
+                          <Link className="text-sm font-medium text-slate-700 hover:text-slate-900" to={`/tasks?processId=${process.id}`}>
+                            View tasks
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </Table>
+              </section>
             ))}
-          </Table>
+          </div>
         </Card>
 
         <Card className="p-5">
           <CardHeader title={text("Creer un processus", "Create Process")} subtitle={text("Ajouter une definition ISO controlee.", "Add a controlled ISO process definition.")} />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("procurement")}>
-              {text("Modele achats", "Use Procurement Template")}
-            </Button>
-            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("audit")}>
-              {text("Modele audit", "Use Audit Template")}
-            </Button>
-            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("training")}>
-              {text("Modele competence", "Competence Template")}
-            </Button>
-            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("documentControl")}>
-              {text("Modele documents", "Document Template")}
-            </Button>
-            <Button type="button" variant="subtle" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("customerFeedback")}>
-              {text("Modele reclamations", "Complaint Template")}
-            </Button>
-            <Button type="button" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => applyProcessTemplate("reset")}>
-              {text("Reinitialiser", "Reset")}
-            </Button>
-          </div>
-          <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-            {text(
-              "Les indicateurs acceptent un tableau JSON ou une liste simple (virgule, point-virgule, ligne).",
-              "Indicators accept JSON array or plain list (comma, semicolon, or line-separated).",
-            )}
-          </p>
           <form className="mt-3 space-y-3" onSubmit={onSubmit}>
             <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage("")} />
             <FormErrors errors={errors} />
@@ -276,12 +219,10 @@ export default function ProcessesPage() {
               name="name"
               type="text"
               value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
               onBlur={() => markFieldTouched("name")}
               error={errors.name}
               touched={touched.name}
-              placeholder={text("ex. Controle des achats", "e.g. Procurement Control")}
-              helpText={text("Minimum 2 caracteres", "Name must be at least 2 characters")}
               required
             />
 
@@ -290,71 +231,64 @@ export default function ProcessesPage() {
               name="responsiblePerson"
               type="text"
               value={form.responsiblePerson}
-              onChange={(e) => setForm((p) => ({ ...p, responsiblePerson: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, responsiblePerson: event.target.value }))}
               onBlur={() => markFieldTouched("responsiblePerson")}
               error={errors.responsiblePerson}
               touched={touched.responsiblePerson}
-              placeholder={text("ex. Responsable qualite", "e.g. Quality Manager")}
               required
             />
+
+            <div className="field-group">
+              <label className="field-label">{text("Departement", "Department")}</label>
+              <Select value={form.departmentId} onChange={(event) => setForm((prev) => ({ ...prev, departmentId: event.target.value }))}>
+                <option value="">{text("Sans departement", "Unclassified")}</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>{department.name}</option>
+                ))}
+              </Select>
+            </div>
 
             <FormField
               label={text("Description", "Description")}
               name="description"
               type="textarea"
               value={form.description}
-              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
               onBlur={() => markFieldTouched("description")}
               error={errors.description}
               touched={touched.description}
-              placeholder={text("Decrire le perimetre, les controles et les resultats.", "Describe scope, controls, and expected outcomes.")}
-              helpText={text("Max 500 caracteres", "Max 500 characters")}
             />
 
-            <FormField
-              label={text("Entrees", "Inputs")}
-              name="inputs"
-              type="text"
-              value={form.inputs}
-              onChange={(e) => setForm((p) => ({ ...p, inputs: e.target.value }))}
-              onBlur={() => markFieldTouched("inputs")}
-              error={errors.inputs}
-              touched={touched.inputs}
-              placeholder={text("ex. Demande, Specification, Budget", "e.g. Request, Specification, Budget")}
-            />
-
-            <FormField
-              label={text("Sorties", "Outputs")}
-              name="outputs"
-              type="text"
-              value={form.outputs}
-              onChange={(e) => setForm((p) => ({ ...p, outputs: e.target.value }))}
-              onBlur={() => markFieldTouched("outputs")}
-              error={errors.outputs}
-              touched={touched.outputs}
-              placeholder={text("ex. Commande, Livraison, Rapport", "e.g. Approved order, Delivery, Acceptance report")}
-            />
-
+            <FormField label={text("Entrees", "Inputs")} name="inputs" type="text" value={form.inputs} onChange={(event) => setForm((prev) => ({ ...prev, inputs: event.target.value }))} />
+            <FormField label={text("Sorties", "Outputs")} name="outputs" type="text" value={form.outputs} onChange={(event) => setForm((prev) => ({ ...prev, outputs: event.target.value }))} />
             <FormField
               label={text("Indicateurs KPI", "KPI Indicators")}
               name="indicators"
               type="textarea"
               value={form.indicators}
-              onChange={(e) => setForm((p) => ({ ...p, indicators: e.target.value }))}
-              onBlur={() => markFieldTouched("indicators")}
-              error={errors.indicators}
-              touched={touched.indicators}
-              placeholder={text("ex. Taux de cloture, Livraison a temps", "e.g. Closure rate, On-time delivery")}
-              helpText={text(
-                "Si vous saisissez des noms simples, les valeurs par defaut sont creees (cible 100, actuel 0).",
-                "If you type plain KPI names, defaults are auto-created (target 100, current 0).",
-              )}
+              onChange={(event) => setForm((prev) => ({ ...prev, indicators: event.target.value }))}
+              helpText={text("Liste simple ou tableau JSON.", "Plain list or JSON array.")}
             />
 
             <Button className="w-full" disabled={isSubmitting}>
               {isSubmitting ? text("Enregistrement...", "Saving...") : text("Enregistrer le processus", "Save Process")}
             </Button>
           </form>
+
+          {isAdmin ? (
+            <form className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3" onSubmit={createDepartment}>
+              <p className="text-sm font-semibold text-slate-900">{text("Ajouter un departement", "Add Department")}</p>
+              <div className="mt-2 flex gap-2">
+                <input
+                  className="saas-input"
+                  value={departmentName}
+                  onChange={(event) => setDepartmentName(event.target.value)}
+                  placeholder={text("ex. Scolarite", "e.g. Academic Affairs")}
+                />
+                <Button type="submit" className="shrink-0">{text("Ajouter", "Add")}</Button>
+              </div>
+            </form>
+          ) : null}
         </Card>
       </div>
     </div>

@@ -5,6 +5,8 @@ const { authorize } = require("../middlewares/auth.middleware");
 const router = express.Router();
 
 router.get("/", processController.listProcesses);
+router.get("/departments", processController.listDepartments);
+router.post("/departments", authorize("ADMIN"), processController.createDepartment);
 router.get("/:id", processController.getProcess);
 router.get("/:id/progress", processController.getProcessProgress);
 router.get("/:id/assessment", processController.getProcessAssessment);

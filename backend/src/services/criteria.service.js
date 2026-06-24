@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const { generateIsoCriteria } = require("../constants/iso-criteria-list");
 
-const DB_TIMEOUT_MS = 6000;
+const DB_TIMEOUT_MS = 10000;
 
 async function withDbTimeout(promise) {
   return Promise.race([

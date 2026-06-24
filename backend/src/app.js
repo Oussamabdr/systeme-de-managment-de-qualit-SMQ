@@ -9,13 +9,26 @@ const { notFound, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
+// Minimal request tracing to diagnose hanging requests in serverless environment
+app.use((req, res, next) => {
+	const start = Date.now();
+	console.info(`REQ_START ${req.method} ${req.originalUrl || req.url}`);
+	res.on('finish', () => {
+		console.info(`REQ_END ${req.method} ${req.originalUrl || req.url} ${res.statusCode} ${Date.now() - start}ms`);
+	});
+	next();
+});
 // OPTIONS handler at the very top - before all other middleware
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.status(204).end();
+app.use((req, res, next) => {
+	if (req.method !== "OPTIONS") {
+		return next();
+	}
+
+	res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+	res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+	res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+	res.header("Access-Control-Allow-Credentials", "true");
+	return res.status(204).end();
 });
 
 // CORS configuration

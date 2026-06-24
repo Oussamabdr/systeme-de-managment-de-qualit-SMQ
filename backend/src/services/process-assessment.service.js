@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/apiError");
 const { VERACITY_LEVELS } = require("../constants/iso-requirements");
+const { generateIsoCriteria } = require("../constants/iso-criteria-list");
 const { clearDashboardCache } = require("./dashboard.service");
 
 function clampScore(score) {
@@ -22,13 +23,14 @@ async function buildAssessmentResponse(records) {
   // records: ProcessCriterion rows keyed by criterion code
   const recordMap = new Map(records.map((record) => [record.criterion.code, record]));
 
-  // load all criteria from DB
+  // load all criteria from DB, with a static fallback when the catalog has been lost
   const allCriteria = await prisma.criterion.findMany({ orderBy: { code: "asc" } });
+  const normalizedCriteria = allCriteria.length > 0 ? allCriteria : generateIsoCriteria();
 
-  const requirements = allCriteria.map((requirement) => {
+  const requirements = normalizedCriteria.map((requirement) => {
     const saved = recordMap.get(requirement.code);
     return {
-      id: requirement.id,
+      id: requirement.id || null,
       code: requirement.code,
       name: requirement.title,
       description: requirement.description || "",
@@ -83,13 +85,48 @@ async function getProcessAssessment(processId) {
   return buildAssessmentResponse(records);
 }
 
+async function ensureCriteriaCatalog(codes) {
+  const uniqueCodes = [...new Set(codes.filter(Boolean))];
+  if (uniqueCodes.length === 0) return new Map();
+
+  const existingCriteria = await prisma.criterion.findMany({
+    where: { code: { in: uniqueCodes } },
+    select: { id: true, code: true },
+  });
+
+  const codeToId = new Map(existingCriteria.map((criterion) => [criterion.code, criterion.id]));
+  const catalog = new Map(generateIsoCriteria().map((criterion) => [criterion.code, criterion]));
+
+  for (const code of uniqueCodes) {
+    if (codeToId.has(code)) continue;
+
+    const item = catalog.get(code);
+    if (!item) {
+      throw new ApiError(400, `Unknown ISO criterion code: ${code}`);
+    }
+
+    const created = await prisma.criterion.create({
+      data: {
+        code: item.code,
+        title: item.title,
+        description: item.description || "",
+        clause: item.clause || null,
+      },
+      select: { id: true },
+    });
+
+    codeToId.set(code, created.id);
+  }
+
+  return codeToId;
+}
+
 async function saveProcessAssessment(processId, items) {
   await ensureProcessExists(processId);
 
   // Map provided codes to criterion IDs
   const codes = items.map((it) => it.code);
-  const criteria = await prisma.criterion.findMany({ where: { code: { in: codes } } });
-  const codeToId = new Map(criteria.map((c) => [c.code, c.id]));
+  const codeToId = await ensureCriteriaCatalog(codes);
   const invalidItem = items.find((item) => !codeToId.has(item.code));
   if (invalidItem) {
     throw new ApiError(400, `Unknown ISO criterion code: ${invalidItem.code}`);

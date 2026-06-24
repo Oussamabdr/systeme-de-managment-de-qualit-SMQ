@@ -1,12 +1,6 @@
-const path = require("path");
-const fs = require("fs");
-const dotenv = require("dotenv");
+const { loadEnv } = require("./load-env");
 
-const repoRootEnvPath = path.resolve(process.cwd(), ".env");
-const backendEnvPath = path.resolve(__dirname, "../../.env");
-const envPath = fs.existsSync(backendEnvPath) ? backendEnvPath : repoRootEnvPath;
-
-dotenv.config({ path: envPath });
+loadEnv();
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -42,10 +36,10 @@ if (!connectionString) {
 	module.exports = createDisabledProxy(
 		"Database not configured: set DATABASE_URL environment variable to a reachable Postgres instance",
 	);
-} else if (/localhost|127\.0\.0\.1|::1/.test(connectionString) && process.env.FORCE_LOCAL_DB !== "true") {
-	console.warn("DATABASE_URL points to localhost. Skipping local DB connection in this environment.");
+} else if (/localhost|127\.0\.0\.1|::1/.test(connectionString) && process.env.DISABLE_LOCAL_DB === "true") {
+	console.warn("DATABASE_URL points to localhost and DISABLE_LOCAL_DB=true. Skipping local DB connection.");
 	module.exports = createDisabledProxy(
-		"Local database detected but not accessible from this environment. Set DATABASE_URL to a reachable DB or set FORCE_LOCAL_DB=true to allow local DB connections",
+		"Local database is disabled. Remove DISABLE_LOCAL_DB=true to connect to local Postgres",
 	);
 } else {
 	// Only require PrismaClient if DATABASE_URL is set and allowed

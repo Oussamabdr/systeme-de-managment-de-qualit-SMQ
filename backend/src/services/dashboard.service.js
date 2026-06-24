@@ -1,5 +1,7 @@
 const dashboardRepository = require("../repositories/dashboard.repository");
 const { computeStatus } = require("./project-progress.service");
+const prisma = require("../config/prisma");
+const ApiError = require("../utils/apiError");
 
 const DASHBOARD_CACHE_TTL_MS = 15000;
 const dashboardCache = new Map();
@@ -24,6 +26,64 @@ function writeCache(key, data) {
 
 function clearDashboardCache() {
   dashboardCache.clear();
+}
+
+async function findEscalationOwner() {
+  const rolesByPriority = ["ADMIN", "CAQ", "PROJECT_MANAGER"];
+
+  for (const role of rolesByPriority) {
+    const user = await prisma.user.findFirst({
+      where: { role },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (user) return user.id;
+  }
+
+  return null;
+}
+
+async function findFirstUserByRole(role) {
+  return prisma.user.findFirst({
+    where: { role },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, fullName: true, email: true, role: true },
+  });
+}
+
+async function buildEmailDraft(payload, user) {
+  const adminUser = await findFirstUserByRole("ADMIN");
+  const topManagementEmail = (process.env.TOP_MANAGEMENT_EMAIL || "").trim() || "direction@example.com";
+  const manualRecipient = (payload.destinationEmail || "").trim();
+  const recipient = manualRecipient || (user.role === "ADMIN"
+    ? (topManagementEmail || adminUser?.email || "")
+    : (adminUser?.email || ""));
+
+  if (!recipient) return null;
+
+  const audience = user.role === "ADMIN" ? "Top management" : "System administration";
+  const chartLines = payload.includeCharts && payload.chartContext?.length
+    ? payload.chartContext.map((item) => `- ${item.label}: ${item.value} (${item.severity})`).join("\n")
+    : "";
+
+  const body = [
+    `Audience: ${audience}`,
+    `Indicator: ${payload.title}`,
+    `Type: ${payload.reportType}`,
+    "",
+    `Comment: ${payload.comment}`,
+    payload.impact ? `Impact: ${payload.impact}` : null,
+    payload.requestedAction ? `Requested action: ${payload.requestedAction}` : null,
+    payload.targetPath ? `Related area: ${payload.targetPath}` : null,
+    chartLines ? `\nGraph context:\n${chartLines}` : null,
+    `\nReported by: ${user.fullName} (${user.role})`,
+  ].filter(Boolean).join("\n");
+
+  return {
+    to: recipient,
+    subject: `[QMS] ${payload.reportType.replaceAll("_", " ")} - ${payload.title}`,
+    body,
+  };
 }
 
 function getPeriodStart(period) {
@@ -470,4 +530,55 @@ async function getMyOverview(userId, period) {
   return result;
 }
 
-module.exports = { getOverview, getMyOverview, clearDashboardCache };
+async function createDashboardReport(payload, user) {
+  if (!["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER", "CAQ"].includes(user.role)) {
+    throw new ApiError(403, "Only authorized dashboard roles can report dashboard items");
+  }
+
+  const ownerId = await findEscalationOwner();
+  const comment = payload.comment.trim();
+  const title = `${payload.reportType.replaceAll("_", " ")}: ${payload.title}`;
+  const chartLines = payload.includeCharts && payload.chartContext?.length
+    ? payload.chartContext.map((item) => `- ${item.label}: ${item.value} (${item.severity})`).join("\n")
+    : "";
+  const recommendation = [
+    `Type: ${payload.reportType}`,
+    comment,
+    payload.impact ? `Impact: ${payload.impact}` : null,
+    payload.requestedAction ? `Requested action: ${payload.requestedAction}` : null,
+    chartLines ? `Included graph context:\n${chartLines}` : null,
+    payload.targetPath ? `Related area: ${payload.targetPath}` : null,
+    `Reported by: ${user.fullName} (${user.role})`,
+  ].filter(Boolean).join("\n\n");
+
+  const data = {
+    title,
+    description: comment,
+    recommendation,
+    severity: payload.severity,
+    source: payload.source || "MANUAL",
+    actionType: "CORRECTIVE",
+    status: "OPEN",
+    createdById: user.id,
+    ownerId,
+  };
+
+  clearDashboardCache();
+
+  const action = await prisma.correctiveAction.create({
+    data,
+    include: {
+      owner: { select: { id: true, fullName: true, email: true, role: true } },
+      createdBy: { select: { id: true, fullName: true, email: true, role: true } },
+    },
+  });
+
+  const emailDraft = payload.sendEmail ? await buildEmailDraft(payload, user) : null;
+
+  return {
+    action,
+    emailDraft,
+  };
+}
+
+module.exports = { getOverview, getMyOverview, createDashboardReport, clearDashboardCache };

@@ -1,10 +1,14 @@
 const app = require("./app");
 const env = require("./config/env");
 const prisma = require("./config/prisma");
+const { ensureFullSchema } = require("./utils/ensure-full-schema");
 
 async function startupDbHealthCheck() {
   try {
     const startedAt = Date.now();
+    if (process.env.AUTO_MIGRATE_SCHEMA === "true") {
+      await ensureFullSchema(prisma);
+    }
     await prisma.$queryRaw`SELECT 1`;
     // Warm the Prisma query engine with a model query to avoid first-request latency.
     await prisma.user.findFirst({ select: { id: true } });

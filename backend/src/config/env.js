@@ -1,12 +1,6 @@
-const path = require("path");
-const fs = require("fs");
-const dotenv = require("dotenv");
+const { loadEnv } = require("./load-env");
 
-const repoRootEnvPath = path.resolve(process.cwd(), ".env");
-const backendEnvPath = path.resolve(__dirname, "../../.env");
-const envPath = fs.existsSync(backendEnvPath) ? backendEnvPath : repoRootEnvPath;
-
-dotenv.config({ path: envPath });
+loadEnv();
 
 const env = {
   port: Number(process.env.PORT || 5000),

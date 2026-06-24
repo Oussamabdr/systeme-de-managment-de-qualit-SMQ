@@ -67,7 +67,9 @@ Notes:
 
 1. Configure environment:
    - Copy `backend/.env.example` to `backend/.env`
-   - Update `DATABASE_URL` to your local PostgreSQL instance
+   - Update `DATABASE_URL` to either a local PostgreSQL database or your hosted PostgreSQL connection string.
+   - Local env loading checks `backend/.env.local`, `backend/.env`, root `.env.local`, then root `.env`.
+   - Empty values are ignored, so keep real secrets in ignored env files instead of source code.
 2. Install and generate client:
    - `cd backend`
    - `npm install`
@@ -79,6 +81,13 @@ Notes:
    - `npm run dev`
 
 Backend base URL: `http://localhost:5000/api`
+
+### Local Database Options
+
+- Hosted DB locally: put your hosted connection string in `backend/.env` as `DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DB_NAME?sslmode=require"`.
+- Local Postgres: create a database named `iso_qms`, use `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/iso_qms"`, then run `npm run db:push` and `npm run seed` from the repo root.
+
+The backend allows localhost PostgreSQL by default. Only set `DISABLE_LOCAL_DB=true` if you intentionally want to block local DB access.
 
 ## Frontend Setup
 

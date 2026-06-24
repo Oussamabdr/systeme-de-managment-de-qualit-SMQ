@@ -11,6 +11,7 @@ async function main() {
   await prisma.task.deleteMany();
   await prisma.projectProcess.deleteMany();
   await prisma.process.deleteMany();
+  await prisma.department.deleteMany();
   await prisma.project.deleteMany();
   await prisma.user.deleteMany();
 
@@ -19,7 +20,7 @@ async function main() {
   const [admin, manager, member, caq] = await Promise.all([
     prisma.user.create({
       data: {
-        fullName: "System Admin",
+        fullName: "Direction Generale Qualite",
         email: "admin@esi.edu",
         passwordHash,
         role: "ADMIN",
@@ -49,6 +50,13 @@ async function main() {
         role: "CAQ",
       },
     }),
+  ]);
+
+  const [dpgr, dg, labo, de] = await Promise.all([
+    prisma.department.create({ data: { code: "DPGR", name: "DPGR" } }),
+    prisma.department.create({ data: { code: "DG", name: "DG" } }),
+    prisma.department.create({ data: { code: "LABO", name: "Labo" } }),
+    prisma.department.create({ data: { code: "DE", name: "DE" } }),
   ]);
 
   const project = await prisma.project.create({
@@ -98,6 +106,7 @@ async function main() {
   const processA = await prisma.process.create({
     data: {
       name: "Academic Program Management",
+      departmentId: de.id,
       description: "Control and improve academic program lifecycle.",
       responsiblePerson: "Dr. Amina Benali",
       inputs: ["Curriculum requests", "Stakeholder feedback"],
@@ -112,6 +121,7 @@ async function main() {
   const processB = await prisma.process.create({
     data: {
       name: "Internal Audit Management",
+      departmentId: dg.id,
       description: "Schedule and execute internal quality audits.",
       responsiblePerson: "Mr. Karim Hadj",
       inputs: ["Audit plan", "Procedure checklists"],
@@ -125,6 +135,7 @@ async function main() {
   const processC = await prisma.process.create({
     data: {
       name: "Supplier Evaluation",
+      departmentId: dpgr.id,
       description: "Evaluate supplier performance and qualification against quality criteria.",
       responsiblePerson: "Mrs. Samira Khelifi",
       objectives: ["Reduce supplier defects", "Increase audit coverage"],
@@ -141,6 +152,7 @@ async function main() {
   const processD = await prisma.process.create({
     data: {
       name: "Document Control",
+      departmentId: dg.id,
       description: "Manage versioning, approval, and controlled distribution of quality documents.",
       responsiblePerson: "Mr. Riad Tarek",
       objectives: ["Ensure current approved docs", "Reduce approval delays"],
@@ -156,6 +168,7 @@ async function main() {
   const processE = await prisma.process.create({
     data: {
       name: "Risk and Opportunity Management",
+      departmentId: labo.id,
       description: "Identify and monitor quality risks and improvement opportunities.",
       responsiblePerson: "Dr. Imane Rahmani",
       objectives: ["Treat high risks on time", "Track opportunity realization"],

@@ -17,6 +17,7 @@ const validationSchemas = {
       .max(500, "La description ne doit pas dépasser 500 caractères")
       .optional()
       .nullable(),
+    departmentId: z.string().optional().nullable(),
     responsiblePerson: z
       .string()
       .min(2, "Le responsable doit être spécifié (au moins 2 caractères)"),

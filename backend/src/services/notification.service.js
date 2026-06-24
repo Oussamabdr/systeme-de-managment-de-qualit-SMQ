@@ -53,6 +53,25 @@ async function findComputedDelayedProjects(projectIds) {
 async function getNotifications(user) {
   const now = new Date();
 
+  const receivedReports = await prisma.correctiveAction.findMany({
+    where: user?.id
+      ? {
+          ownerId: user.id,
+          status: { in: ["OPEN", "IN_PROGRESS"] },
+        }
+      : undefined,
+    include: {
+      createdBy: {
+        select: { id: true, fullName: true, email: true, role: true },
+      },
+      owner: {
+        select: { id: true, fullName: true, email: true, role: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+  });
+
   if (user?.role === "TEAM_MEMBER") {
     const overdueTasks = await prisma.task.findMany({
       where: {
@@ -82,6 +101,7 @@ async function getNotifications(user) {
     return {
       overdueTasks,
       delayedProjects,
+      receivedReports,
     };
   }
 
@@ -110,6 +130,7 @@ async function getNotifications(user) {
   return {
     overdueTasks,
     delayedProjects,
+    receivedReports,
   };
 }
 

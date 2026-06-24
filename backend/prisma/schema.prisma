@@ -93,6 +93,15 @@ model User {
   updatedAt                 DateTime           @updatedAt
 }
 
+model Department {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  code      String    @unique
+  processes Process[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
 model Project {
   id                String             @id @default(cuid())
   name              String
@@ -112,6 +121,7 @@ model Process {
   id                     String                         @id @default(cuid())
   name                   String
   description            String?
+  departmentId           String?
   objectives             String[]                       @default([])
   responsiblePerson      String
   inputs                 String[]
@@ -124,10 +134,13 @@ model Process {
   tasks                  Task[]
   correctiveActions      CorrectiveAction[]
   documents              Document[]
+  department             Department?                    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   requirementAssessments ProcessRequirementAssessment[]
   createdAt              DateTime                       @default(now())
   updatedAt              DateTime                       @updatedAt
   processCriterions      ProcessCriterion[]
+
+  @@index([departmentId])
 }
 
 model ProcessRequirementAssessment {

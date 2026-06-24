@@ -79,7 +79,7 @@ export default function RegisterPage() {
             >
               <option value="TEAM_MEMBER">{text("Membre de l'equipe", "Team Member")}</option>
               <option value="PROJECT_MANAGER">{text("Responsable de projet", "Project Manager")}</option>
-              <option value="ADMIN">{text("Administration", "Admin")}</option>
+              <option value="ADMIN">{text("Direction Generale Qualite", "Quality Executive Office")}</option>
             </Select>
           </div>
 
