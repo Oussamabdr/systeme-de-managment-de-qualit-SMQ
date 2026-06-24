@@ -14,9 +14,23 @@ const storage =
         removeItem: () => {},
       };
 
+function readStoredJson(key) {
+  const value = storage.getItem(key);
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    storage.removeItem(key);
+    return null;
+  }
+}
+
 const initialState = {
   token: storage.getItem("qms_token"),
-  user: JSON.parse(storage.getItem("qms_user") || "null"),
+  user: readStoredJson("qms_user"),
 };
 
 export const useAuthStore = create((set) => ({

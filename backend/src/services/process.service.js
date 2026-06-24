@@ -3,47 +3,29 @@ const ApiError = require("../utils/apiError");
 const { computeProcessProgressSnapshot } = require("./process-progress.service");
 
 function includeShape() {
-  return {
-    department: true,
-    projects: {
-      include: {
-        project: true,
-      },
-    },
-    _count: {
-      select: { tasks: true, documents: true },
-    },
-    tasks: {
-      select: {
-        id: true,
-        status: true,
-        dueDate: true,
-      },
-    },
-  };
+  return {};
 }
 
 function listIncludeShape() {
-  return {
-    department: true,
-    _count: {
-      select: { tasks: true, documents: true },
-    },
-    tasks: {
-      select: {
-        id: true,
-        status: true,
-        dueDate: true,
-      },
-    },
-  };
+  return {};
 }
 
 async function listProcesses() {
-  await ensureDefaultDepartments();
   const processes = await prisma.process.findMany({
-    include: listIncludeShape(),
-    orderBy: [{ department: { name: "asc" } }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      objectives: true,
+      responsiblePerson: true,
+      inputs: true,
+      outputs: true,
+      knowledgeItems: true,
+      indicators: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
   });
   return processes.map((process) => {
     const snapshot = computeProcessProgressSnapshot(process);
@@ -59,7 +41,22 @@ async function listProcesses() {
 }
 
 async function getProcessById(id) {
-  const process = await prisma.process.findUnique({ where: { id }, include: includeShape() });
+  const process = await prisma.process.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      objectives: true,
+      responsiblePerson: true,
+      inputs: true,
+      outputs: true,
+      knowledgeItems: true,
+      indicators: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
   if (!process) throw new ApiError(404, "Process not found");
   const snapshot = computeProcessProgressSnapshot(process);
   return {
@@ -72,47 +69,52 @@ async function getProcessById(id) {
   };
 }
 
-async function ensureDefaultDepartments() {
-  const defaults = [
-    { code: "DPGR", name: "DPGR" },
-    { code: "DG", name: "DG" },
-    { code: "LABO", name: "Labo" },
-    { code: "DE", name: "DE" },
-  ];
-
-  await Promise.all(defaults.map((department) => prisma.department.upsert({
-    where: { code: department.code },
-    update: {},
-    create: department,
-  })));
-}
-
 async function listDepartments() {
-  await ensureDefaultDepartments();
-  return prisma.department.findMany({
-    include: { _count: { select: { processes: true } } },
-    orderBy: { name: "asc" },
-  });
+  return [];
 }
 
-async function createDepartment(data) {
-  const code = data.code || data.name;
-  return prisma.department.create({
-    data: {
-      name: data.name.trim(),
-      code: code.trim().toUpperCase().replace(/\s+/g, "_"),
+async function createDepartment() {
+  throw new ApiError(501, "Department management is not available for the current database schema.");
+}
+
+async function createProcess(data) {
+  return prisma.process.create({
+    data,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      objectives: true,
+      responsiblePerson: true,
+      inputs: true,
+      outputs: true,
+      knowledgeItems: true,
+      indicators: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
 
-async function createProcess(data) {
-  await ensureDefaultDepartments();
-  return prisma.process.create({ data, include: includeShape() });
-}
-
 async function updateProcess(id, data) {
   await getProcessById(id);
-  return prisma.process.update({ where: { id }, data, include: includeShape() });
+  return prisma.process.update({
+    where: { id },
+    data,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      objectives: true,
+      responsiblePerson: true,
+      inputs: true,
+      outputs: true,
+      knowledgeItems: true,
+      indicators: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 }
 
 async function deleteProcess(id) {
