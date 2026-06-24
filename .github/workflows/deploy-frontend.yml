@@ -10,11 +10,11 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
       - name: Install dependencies
         run: |
           cd frontend
-          npm ci
+          npm install
       - name: Build
         env:
           VITE_API_URL: https://iso-lemon.vercel.app/api
