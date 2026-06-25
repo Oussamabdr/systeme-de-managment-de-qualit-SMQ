@@ -29,7 +29,7 @@ function buildBpmnXml(processData) {
   const TASK_H = 80;
   const END_W = 36;
   const END_H = 36;
-  const SPACING = 150; 
+  const SPACING = 160; 
   const BASE_CANVAS_Y = 200;
 
   const getTopLeftY = (elementType) => {
@@ -59,7 +59,7 @@ function buildBpmnXml(processData) {
     nodeConnections[targetId].incoming.push(flowId);
   }
 
-  let x = 100;
+  let x = 120;
 
   // 1. START EVENT
   const startLabel = escapeXml(inputs.length > 0 ? inputs.join(", ") : "Start");
@@ -71,66 +71,44 @@ function buildBpmnXml(processData) {
   shapes.push(
     `<bpmndi:BPMNShape id="${startId}_di" bpmnElement="${startId}">` +
       `<omgdc:Bounds x="${x}" y="${startY}" width="${START_W}" height="${START_H}" />` +
-      `</bpmndi:BPMNShape>`
+      `<bpmndi:BPMNLabel>` +
+        `<omgdc:Bounds x="${x - 40}" y="${startY + START_H + 10}" width="${START_W + 80}" height="${30}" />` +
+      `</bpmndi:BPMNLabel>` +
+    `</bpmndi:BPMNShape>`
   );
 
   let prevBounds = { x, y: startY, width: START_W, height: START_H };
   x += START_W + SPACING;
 
   // 2. TASKS
-  if (objectives.length > 0) {
-    objectives.forEach((obj, index) => {
-      const taskId = taskIds[index];
-      const taskY = getTopLeftY("task");
-      const incomingTags = nodeConnections[taskId].incoming.map(f => `<bpmn:incoming>${f}</bpmn:incoming>`).join("");
-      const outgoingTags = nodeConnections[taskId].outgoing.map(f => `<bpmn:outgoing>${f}</bpmn:outgoing>`).join("");
-
-      nodes.push(`<bpmn:task id="${taskId}" name="${escapeXml(obj)}">${incomingTags}${outgoingTags}</bpmn:task>`);
-      shapes.push(
-        `<bpmndi:BPMNShape id="${taskId}_di" bpmnElement="${taskId}">` +
-          `<omgdc:Bounds x="${x}" y="${taskY}" width="${TASK_W}" height="${TASK_H}" />` +
-          `</bpmndi:BPMNShape>`
-      );
-
-      const taskBounds = { x, y: taskY, width: TASK_W, height: TASK_H };
-      const flowId = nodeConnections[taskId].incoming[0];
-      
-      edges.push(
-        `<bpmndi:BPMNEdge id="${flowId}_di" bpmnElement="${flowId}">` +
-          `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-          `<omgdi:waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
-          `</bpmndi:BPMNEdge>`
-      );
-
-      prevBounds = taskBounds;
-      x += TASK_W + SPACING;
-    });
-  } else {
-    const taskId = "Task_Execute";
+  const taskItems = objectives.length > 0 ? objectives : ["Execute Process"];
+  
+  taskItems.forEach((obj, index) => {
+    const taskId = taskIds[index];
     const taskY = getTopLeftY("task");
     const incomingTags = nodeConnections[taskId].incoming.map(f => `<bpmn:incoming>${f}</bpmn:incoming>`).join("");
     const outgoingTags = nodeConnections[taskId].outgoing.map(f => `<bpmn:outgoing>${f}</bpmn:outgoing>`).join("");
 
-    nodes.push(`<bpmn:task id="${taskId}" name="Execute Process">${incomingTags}${outgoingTags}</bpmn:task>`);
+    nodes.push(`<bpmn:task id="${taskId}" name="${escapeXml(obj)}">${incomingTags}${outgoingTags}</bpmn:task>`);
     shapes.push(
       `<bpmndi:BPMNShape id="${taskId}_di" bpmnElement="${taskId}">` +
         `<omgdc:Bounds x="${x}" y="${taskY}" width="${TASK_W}" height="${TASK_H}" />` +
-        `</bpmndi:BPMNShape>`
+      `</bpmndi:BPMNShape>`
     );
 
     const taskBounds = { x, y: taskY, width: TASK_W, height: TASK_H };
     const flowId = nodeConnections[taskId].incoming[0];
-
+    
     edges.push(
       `<bpmndi:BPMNEdge id="${flowId}_di" bpmnElement="${flowId}">` +
         `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-        `<omgdi:waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
-        `</bpmndi:BPMNEdge>`
+        `<omgdi:waypoint x="${taskBounds.x - 1}" y="${taskBounds.y + taskBounds.height / 2}" />` +
+      `</bpmndi:BPMNEdge>`
     );
 
     prevBounds = taskBounds;
     x += TASK_W + SPACING;
-  }
+  });
 
   // 3. END EVENT
   const endLabel = escapeXml(outputs.length > 0 ? outputs.join(", ") : "End");
@@ -142,18 +120,21 @@ function buildBpmnXml(processData) {
   shapes.push(
     `<bpmndi:BPMNShape id="${endId}_di" bpmnElement="${endId}">` +
       `<omgdc:Bounds x="${x}" y="${endY}" width="${END_W}" height="${END_H}" />` +
-      `</bpmndi:BPMNShape>`
+      `<bpmndi:BPMNLabel>` +
+        `<omgdc:Bounds x="${x - 40}" y="${endY + END_H + 10}" width="${END_W + 80}" height="${30}" />` +
+      `</bpmndi:BPMNLabel>` +
+    `</bpmndi:BPMNShape>`
   );
 
   const finalFlowId = nodeConnections[endId].incoming[0];
   edges.push(
     `<bpmndi:BPMNEdge id="${finalFlowId}_di" bpmnElement="${finalFlowId}">` +
       `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-      `<omgdi:waypoint x="${x}" y="${endY + END_H / 2}" />` +
-      `</bpmndi:BPMNEdge>`
+      `<omgdi:waypoint x="${x - 1}" y="${endY + END_H / 2}" />` +
+    `</bpmndi:BPMNEdge>`
   );
 
-  // 4. APPEND SEQUENCE FLOW STRUCTURAL ELEMENTS TO NODES ARRAY
+  // 4. SEQUENCE FLOW ELEMENTS
   orderedElementIds.forEach(id => {
     nodeConnections[id].outgoing.forEach(flowId => {
       const targetId = orderedElementIds[orderedElementIds.indexOf(id) + 1];
@@ -201,7 +182,7 @@ export default function AutoBpmnViewer({ processData }) {
 
     viewer.importXML(xml).then(() => {
       const canvas = viewer.get("canvas");
-      canvas.zoom("fit-viewport", { x: 0, y: 0 });
+      canvas.zoom("fit-viewport", { x: "auto", y: "auto" });
     });
 
     return () => {
