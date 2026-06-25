@@ -29,7 +29,7 @@ function buildBpmnXml(processData) {
   const TASK_H = 80;
   const END_W = 36;
   const END_H = 36;
-  const SPACING = 150; // Reduced spacing since arrows look better tighter
+  const SPACING = 150; 
   const BASE_CANVAS_Y = 200;
 
   const getTopLeftY = (elementType) => {
@@ -37,23 +37,19 @@ function buildBpmnXml(processData) {
     return BASE_CANVAS_Y - START_H / 2;
   };
 
-  // Pre-calculate IDs to establish structural incoming/outgoing links
   const startId = "StartEvent_1";
   const endId = "EndEvent_1";
   const taskIds = objectives.length > 0 
     ? objectives.map((_, i) => `Task_${i + 1}`) 
     : ["Task_Execute"];
 
-  // Chain all IDs together to easily map flows
   const orderedElementIds = [startId, ...taskIds, endId];
   
-  // Track structural flows for each node
   const nodeConnections = {};
   orderedElementIds.forEach(id => {
     nodeConnections[id] = { incoming: [], outgoing: [] };
   });
 
-  // Generate flows and populate connections
   for (let i = 0; i < orderedElementIds.length - 1; i++) {
     const sourceId = orderedElementIds[i];
     const targetId = orderedElementIds[i + 1];
@@ -101,8 +97,8 @@ function buildBpmnXml(processData) {
       
       edges.push(
         `<bpmndi:BPMNEdge id="${flowId}_di" bpmnElement="${flowId}">` +
-          `<omgdi:Waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-          `<omgdi:Waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
+          `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
+          `<omgdi:waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
           `</bpmndi:BPMNEdge>`
       );
 
@@ -127,8 +123,8 @@ function buildBpmnXml(processData) {
 
     edges.push(
       `<bpmndi:BPMNEdge id="${flowId}_di" bpmnElement="${flowId}">` +
-        `<omgdi:Waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-        `<omgdi:Waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
+        `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
+        `<omgdi:waypoint x="${taskBounds.x}" y="${taskBounds.y + taskBounds.height / 2}" />` +
         `</bpmndi:BPMNEdge>`
     );
 
@@ -152,8 +148,8 @@ function buildBpmnXml(processData) {
   const finalFlowId = nodeConnections[endId].incoming[0];
   edges.push(
     `<bpmndi:BPMNEdge id="${finalFlowId}_di" bpmnElement="${finalFlowId}">` +
-      `<omgdi:Waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
-      `<omgdi:Waypoint x="${x}" y="${endY + END_H / 2}" />` +
+      `<omgdi:waypoint x="${prevBounds.x + prevBounds.width}" y="${prevBounds.y + prevBounds.height / 2}" />` +
+      `<omgdi:waypoint x="${x}" y="${endY + END_H / 2}" />` +
       `</bpmndi:BPMNEdge>`
   );
 
