@@ -1,0 +1,1 @@
+function e(e){let t=e?.code,n=String(e?.message||``).toLowerCase();return t===`ECONNABORTED`||n.includes(`timeout`)?`Le serveur met trop de temps a repondre. Verifiez la connexion API (backend).`:n.includes(`network error`)?`Connexion impossible au serveur API. Verifiez que le backend est en ligne.`:e?.response?.data?.message||e?.message||`Unexpected error`}export{e as t};
