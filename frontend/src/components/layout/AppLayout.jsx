@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, GitFork, ListTodo, FileText, Bell, Search, ChevronDown, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useNotificationStore } from "../../store/notificationStore";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 import { Input } from "../ui/Input";
 import Button from "../ui/Button";
 import ThemeLanguageToggle from "../ui/ThemeLanguageToggle";
@@ -101,6 +103,17 @@ export default function AppLayout() {
   const theme = useUiStore((state) => state.theme);
   const setTheme = useUiStore((state) => state.setTheme);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const dropdownOpen = useNotificationStore((s) => s.dropdownOpen);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
+  const toggleDropdown = useNotificationStore((s) => s.toggleDropdown);
+  const closeDropdown = useNotificationStore((s) => s.closeDropdown);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   const text = (fr, en) => t(language, fr, en);
   const navItems = getNavItems(language);
@@ -190,7 +203,7 @@ export default function AppLayout() {
       </aside>
 
       <main className="workspace-main space-y-5 pb-10">
-        <header className="surface workspace-header px-5 py-4">
+        <header className="surface workspace-header px-5 py-4 relative z-10">
           <div className="workspace-header-copy">
             <p className="workspace-header-eyebrow">{text("Qualite / ", "Quality / ")}{pageTitle}</p>
             <h2 className="workspace-header-title">{pageTitle}</h2>
@@ -217,9 +230,21 @@ export default function AppLayout() {
               variant="expanded"
             />
 
-            <button className="saas-btn saas-btn-subtle workspace-icon-btn h-10 w-10 p-0" aria-label={text("Notifications", "Notifications")}>
-              <Bell size={16} />
-            </button>
+            <div className="relative">
+              <button
+                className="saas-btn saas-btn-subtle workspace-icon-btn h-10 w-10 p-0"
+                aria-label={text("Notifications", "Notifications")}
+                onClick={toggleDropdown}
+              >
+                <Bell size={16} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold leading-none text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+              {dropdownOpen && <NotificationDropdown onClose={closeDropdown} />}
+            </div>
 
             <button
               className="saas-btn saas-btn-subtle workspace-user-btn gap-2"

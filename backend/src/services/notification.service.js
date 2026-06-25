@@ -134,4 +134,46 @@ async function getNotifications(user) {
   };
 }
 
-module.exports = { getNotifications };
+async function getUnreadCount(user) {
+  const now = new Date();
+
+  const receivedReportsCount = user?.id
+    ? await prisma.correctiveAction.count({
+        where: {
+          ownerId: user.id,
+          status: { in: ["OPEN", "IN_PROGRESS"] },
+        },
+      })
+    : 0;
+
+  const overdueTaskWhere = user?.role === "TEAM_MEMBER"
+    ? { assigneeId: user.id, dueDate: { lt: now }, status: { not: "DONE" } }
+    : { dueDate: { lt: now }, status: { not: "DONE" } };
+
+  const overdueTasksCount = await prisma.task.count({ where: overdueTaskWhere });
+
+  const delayedProjects = user?.role === "TEAM_MEMBER"
+    ? await findComputedDelayedProjects(
+        (
+          await prisma.task.findMany({
+            where: { assigneeId: user.id },
+            select: { projectId: true },
+            distinct: ["projectId"],
+          })
+        ).map((r) => r.projectId).filter(Boolean)
+      )
+    : await findComputedDelayedProjects(
+        (await prisma.project.findMany({ select: { id: true } })).map((p) => p.id)
+      );
+
+  return {
+    count: receivedReportsCount + overdueTasksCount + delayedProjects.length,
+    breakdown: {
+      reports: receivedReportsCount,
+      overdueTasks: overdueTasksCount,
+      delayedProjects: delayedProjects.length,
+    },
+  };
+}
+
+module.exports = { getNotifications, getUnreadCount };
