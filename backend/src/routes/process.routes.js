@@ -8,6 +8,8 @@ router.get("/", processController.listProcesses);
 router.get("/departments", processController.listDepartments);
 router.post("/departments", authorize("ADMIN"), processController.createDepartment);
 router.get("/:id", processController.getProcess);
+router.get("/:id/bpmn", processController.getProcessBpmn);
+router.put("/:id/bpmn", authorize("ADMIN", "PROJECT_MANAGER"), processController.saveProcessBpmn);
 router.get("/:id/progress", processController.getProcessProgress);
 router.get("/:id/assessment", processController.getProcessAssessment);
 router.put("/:id/assessment", authorize("ADMIN", "PROJECT_MANAGER"), processController.saveProcessAssessment);

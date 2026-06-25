@@ -1,6 +1,7 @@
 const processService = require("../services/process.service");
 const { computeProcessProgress } = require("../services/process-progress.service");
 const processAssessmentService = require("../services/process-assessment.service");
+const bpmnService = require("../services/bpmn.service");
 const { validationSchemas } = require("../utils/validation");
 const { z } = require("zod");
 
@@ -89,6 +90,27 @@ async function deleteProcess(req, res, next) {
   }
 }
 
+async function getProcessBpmn(req, res, next) {
+  try {
+    const xml = await bpmnService.getProcessBpmn(req.params.id);
+    if (!xml) return res.status(404).json({ success: false, message: "Process not found" });
+    res.json({ success: true, data: xml });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function saveProcessBpmn(req, res, next) {
+  try {
+    const { xml } = req.body;
+    if (!xml) return res.status(400).json({ success: false, message: "XML is required" });
+    await bpmnService.saveProcessBpmn(req.params.id, xml);
+    res.json({ success: true, message: "BPMN saved" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getProcessProgress(req, res, next) {
   try {
     const data = await computeProcessProgress(req.params.id);
@@ -122,6 +144,8 @@ module.exports = {
   listDepartments,
   createDepartment,
   getProcess,
+  getProcessBpmn,
+  saveProcessBpmn,
   getProcessProgress,
   getProcessAssessment,
   saveProcessAssessment,

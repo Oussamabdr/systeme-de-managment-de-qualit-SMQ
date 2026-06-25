@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
@@ -296,7 +296,14 @@ export default function ProcessDetailsPage() {
       </section>
 
       <section className="saas-card p-5">
-        <CardHeader title="Process Flow" subtitle="Automated BPMN map generated from inputs, objectives, and outputs." />
+        <div className="flex items-start justify-between gap-4">
+          <CardHeader title="Process Flow" subtitle="Automated BPMN map generated from inputs, objectives, and outputs." />
+          <Link to={`/processes/${processId}/bpmn`}>
+            <button className="saas-btn saas-btn-subtle text-sm" type="button">
+              Edit BPMN
+            </button>
+          </Link>
+        </div>
         <AutoBpmnViewer processData={process} />
       </section>
 

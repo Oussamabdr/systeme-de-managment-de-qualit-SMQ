@@ -16,6 +16,7 @@ const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const CorrectiveActionsPage = lazy(() => import("./pages/CorrectiveActionsPage"));
 const NonConformitiesPage = lazy(() => import("./pages/NonConformitiesPage"));
+const BpmnModelerPage = lazy(() => import("./pages/BpmnModelerPage"));
 
 function ScreenLoader() {
   return <div className="saas-card p-6 text-sm text-slate-500">Loading workspace...</div>;
@@ -35,6 +36,7 @@ export default function App() {
             <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER", "AUDITEUR_EXTERNE"]} />}>
               <Route path="/processes" element={<ProcessesPage />} />
               <Route path="/processes/:processId" element={<ProcessDetailsPage />} />
+              <Route path="/processes/:processId/bpmn" element={<BpmnModelerPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/:projectId" element={<ProjectDetailsPage />} />
             </Route>

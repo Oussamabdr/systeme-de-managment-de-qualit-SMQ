@@ -129,6 +129,7 @@ model Process {
   outputs                String[]
   knowledgeItems         String[]                       @default([])
   indicators             Json
+  bpmnXml                String?
   kpis                   Kpi[]
   nonConformities        NonConformity[]
   projects               ProjectProcess[]
