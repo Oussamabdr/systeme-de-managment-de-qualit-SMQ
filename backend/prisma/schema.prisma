@@ -17,6 +17,7 @@ enum Role {
   PROJECT_MANAGER
   TEAM_MEMBER
   CAQ
+  AUDITEUR_EXTERNE
 }
 
 enum ProjectStatus {

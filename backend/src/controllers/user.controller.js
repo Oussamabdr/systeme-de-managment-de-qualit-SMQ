@@ -5,14 +5,14 @@ const createUserSchema = z.object({
   fullName: z.string().min(2),
   email: z.email(),
   password: z.string().min(6),
-  role: z.enum(["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"]).default("TEAM_MEMBER"),
+  role: z.enum(["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER", "AUDITEUR_EXTERNE"]).default("TEAM_MEMBER"),
 });
 
 const updateUserSchema = z.object({
   fullName: z.string().min(2).optional(),
   email: z.email().optional(),
   password: z.string().min(6).optional(),
-  role: z.enum(["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"]).optional(),
+  role: z.enum(["ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER", "AUDITEUR_EXTERNE"]).optional(),
 });
 
 async function listUsers(_req, res, next) {

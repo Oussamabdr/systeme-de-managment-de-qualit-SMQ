@@ -32,7 +32,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
 
-            <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER"]} />}>
+            <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER", "AUDITEUR_EXTERNE"]} />}>
               <Route path="/processes" element={<ProcessesPage />} />
               <Route path="/processes/:processId" element={<ProcessDetailsPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
@@ -43,7 +43,7 @@ export default function App() {
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
 
-            <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER", "CAQ"]} />}>
+            <Route element={<RoleRoute allowedRoles={["ADMIN", "PROJECT_MANAGER", "CAQ", "AUDITEUR_EXTERNE"]} />}>
               <Route path="/corrective-actions" element={<CorrectiveActionsPage />} />
               <Route path="/non-conformities" element={<NonConformitiesPage />} />
             </Route>

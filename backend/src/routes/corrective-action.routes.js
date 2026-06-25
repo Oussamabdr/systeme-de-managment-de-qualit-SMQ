@@ -4,8 +4,8 @@ const { authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
-router.get("/", authorize("ADMIN", "PROJECT_MANAGER", "CAQ"), correctiveActionController.listActions);
-router.get("/:id", authorize("ADMIN", "PROJECT_MANAGER", "CAQ"), correctiveActionController.getAction);
+router.get("/", authorize("ADMIN", "PROJECT_MANAGER", "CAQ", "AUDITEUR_EXTERNE"), correctiveActionController.listActions);
+router.get("/:id", authorize("ADMIN", "PROJECT_MANAGER", "CAQ", "AUDITEUR_EXTERNE"), correctiveActionController.getAction);
 router.post("/", authorize("ADMIN", "PROJECT_MANAGER", "CAQ"), correctiveActionController.createAction);
 router.patch("/:id", authorize("ADMIN", "PROJECT_MANAGER", "CAQ"), correctiveActionController.updateAction);
 router.delete("/:id", authorize("ADMIN", "CAQ"), correctiveActionController.deleteAction);

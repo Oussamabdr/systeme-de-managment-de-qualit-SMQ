@@ -17,7 +17,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
-  const [admin, manager, member, caq] = await Promise.all([
+  const [admin, manager, member, caq, auditeur] = await Promise.all([
     prisma.user.create({
       data: {
         fullName: "Direction Generale Qualite",
@@ -48,6 +48,14 @@ async function main() {
         email: "caq@esi.edu",
         passwordHash,
         role: "CAQ",
+      },
+    }),
+    prisma.user.create({
+      data: {
+        fullName: "Auditeur Externe",
+        email: "auditeur@esi.edu",
+        passwordHash,
+        role: "AUDITEUR_EXTERNE",
       },
     }),
   ]);
