@@ -400,6 +400,7 @@ async function main() {
       { email: "manager@esi.edu", password: "Password123!", role: "PROJECT_MANAGER" },
       { email: "member@esi.edu", password: "Password123!", role: "TEAM_MEMBER" },
       { email: "caq@esi.edu", password: "Password123!", role: "CAQ" },
+      { email: "auditeur@esi.edu", password: "Password123!", role: "AUDITEUR_EXTERNE" },
     ],
     demoProjects: [
       { name: project.name, status: "IN_PROGRESS" },
