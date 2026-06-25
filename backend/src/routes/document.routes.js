@@ -6,6 +6,7 @@ const { authorize } = require("../middlewares/auth.middleware");
 const router = express.Router();
 
 router.get("/", documentController.listDocuments);
+router.get("/:id/download", documentController.downloadDocument);
 router.post(
   "/upload",
   authorize("ADMIN", "PROJECT_MANAGER", "TEAM_MEMBER"),

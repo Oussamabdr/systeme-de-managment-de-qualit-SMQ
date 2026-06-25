@@ -46,4 +46,16 @@ async function listDocuments(req, res, next) {
   }
 }
 
-module.exports = { uploadDocument, listDocuments };
+async function downloadDocument(req, res, next) {
+  try {
+    const doc = await documentService.getDocumentById(req.params.id);
+    if (!doc) throw new ApiError(404, "Document not found");
+
+    const filePath = path.resolve(process.cwd(), doc.path);
+    res.download(filePath, doc.name);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { uploadDocument, listDocuments, downloadDocument };

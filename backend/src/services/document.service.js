@@ -71,4 +71,8 @@ async function validateUploadScopeForUser(user, payload) {
   }
 }
 
-module.exports = { createDocument, listDocuments, listDocumentsForUser, validateUploadScopeForUser };
+async function getDocumentById(id) {
+  return prisma.document.findUnique({ where: { id } });
+}
+
+module.exports = { createDocument, listDocuments, listDocumentsForUser, validateUploadScopeForUser, getDocumentById };

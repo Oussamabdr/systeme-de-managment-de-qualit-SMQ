@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { useUiStore } from "../store/uiStore";
@@ -115,7 +115,7 @@ export default function DocumentsPage() {
         <div className="px-5 pt-5">
           <CardHeader title={text("Documents", "Documents")} subtitle={text("Liste des fichiers enregistres.", "List of uploaded files.")} />
         </div>
-        <Table headers={[text("Document", "Document"), text("Tache", "Task"), text("Processus", "Process"), text("Telecharge par", "Uploader")]}>
+        <Table headers={[text("Document", "Document"), text("Tache", "Task"), text("Processus", "Process"), text("Telecharge par", "Uploader"), ""]}>
           {documents.map((doc) => (
             <tr key={doc.id}>
               <td className="px-4 py-3">
@@ -127,6 +127,16 @@ export default function DocumentsPage() {
               <td className="px-4 py-3">{doc.task?.title ? <Badge tone="blue">{doc.task.title}</Badge> : "-"}</td>
               <td className="px-4 py-3">{doc.process?.name ? <Badge tone="slate">{doc.process.name}</Badge> : "-"}</td>
               <td className="px-4 py-3 text-slate-600">{doc.uploadedBy?.fullName}</td>
+              <td className="px-4 py-3">
+                <a
+                  href={`/api/documents/${doc.id}/download`}
+                  className="saas-btn saas-btn-subtle inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                  download
+                >
+                  <Download size={12} />
+                  {text("Telecharger", "Download")}
+                </a>
+              </td>
             </tr>
           ))}
         </Table>
