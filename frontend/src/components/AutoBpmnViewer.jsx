@@ -1,14 +1,23 @@
 import { useEffect, useRef } from "react";
 import BpmnViewer from "bpmn-js/lib/Viewer";
 import "bpmn-js/dist/assets/diagram-js.css";
+import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
+
+function escapeXml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 function buildBpmnXml(processData) {
   const inputs = Array.isArray(processData.inputs) ? processData.inputs : [];
   const objectives = Array.isArray(processData.objectives) ? processData.objectives : [];
   const outputs = Array.isArray(processData.outputs) ? processData.outputs : [];
 
-  const name = processData.name || "Process";
+  const name = escapeXml(processData.name || "Process");
 
   const nodes = [];
   const shapes = [];
@@ -31,7 +40,7 @@ function buildBpmnXml(processData) {
   let x = 100;
 
   const startId = "StartEvent_1";
-  const startLabel = inputs.length > 0 ? inputs.join(", ") : "Start";
+  const startLabel = escapeXml(inputs.length > 0 ? inputs.join(", ") : "Start");
   nodes.push(`<bpmn:startEvent id="${startId}" name="${startLabel}">`);
   nodes.push(`</bpmn:startEvent>`);
   const startY = getTopLeftY("event");
@@ -50,7 +59,7 @@ function buildBpmnXml(processData) {
   if (objectives.length > 0) {
     objectives.forEach((obj, index) => {
       const taskId = `Task_${index + 1}`;
-      nodes.push(`<bpmn:task id="${taskId}" name="${obj}">`);
+      nodes.push(`<bpmn:task id="${taskId}" name="${escapeXml(obj)}">`);
       nodes.push(`</bpmn:task>`);
       const taskY = getTopLeftY("task");
       shapes.push(
@@ -108,7 +117,7 @@ function buildBpmnXml(processData) {
   }
 
   const endId = "EndEvent_1";
-  const endLabel = outputs.length > 0 ? outputs.join(", ") : "End";
+  const endLabel = escapeXml(outputs.length > 0 ? outputs.join(", ") : "End");
   nodes.push(`<bpmn:endEvent id="${endId}" name="${endLabel}">`);
   nodes.push(`</bpmn:endEvent>`);
   const endY = getTopLeftY("event");
@@ -144,8 +153,8 @@ function buildBpmnXml(processData) {
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      ${shapes.join("\n      ")}
       ${edges.join("\n      ")}
+      ${shapes.join("\n      ")}
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
@@ -172,7 +181,7 @@ export default function AutoBpmnViewer({ processData }) {
 
     viewer.importXML(xml).then(() => {
       const canvas = viewer.get("canvas");
-      canvas.zoom("fit-viewport");
+      canvas.zoom("fit-viewport", { x: 0, y: 0 });
     });
 
     return () => {
