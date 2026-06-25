@@ -163,7 +163,7 @@ function buildBpmnXml(processData) {
   return xml;
 }
 
-export default function AutoBpmnViewer({ processData }) {
+export default function AutoBpmnViewer({ processData, bpmnXml }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
 
@@ -178,7 +178,7 @@ export default function AutoBpmnViewer({ processData }) {
 
     viewerRef.current = viewer;
 
-    const xml = buildBpmnXml(processData);
+    const xml = bpmnXml || buildBpmnXml(processData);
 
     viewer.importXML(xml).then(() => {
       const canvas = viewer.get("canvas");
@@ -191,7 +191,7 @@ export default function AutoBpmnViewer({ processData }) {
         viewerRef.current = null;
       }
     };
-  }, [processData]);
+  }, [processData, bpmnXml]);
 
   if (!processData) return null;
 

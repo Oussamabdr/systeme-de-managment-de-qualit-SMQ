@@ -23,6 +23,7 @@ export default function ProcessDetailsPage() {
   const user = useAuthStore((state) => state.user);
   const canEditAssessment = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER";
   const [state, setState] = useState({ loading: true, data: null, error: "" });
+  const [bpmnXml, setBpmnXml] = useState(null);
   const [assessment, setAssessment] = useState([]);
   const [savedAssessment, setSavedAssessment] = useState([]);
   const [assessmentMeta, setAssessmentMeta] = useState({
@@ -40,14 +41,16 @@ export default function ProcessDetailsPage() {
 
     async function load() {
       try {
-        const [{ data: processData }, { data: assessmentData }] = await Promise.all([
+        const [{ data: processData }, { data: assessmentData }, bpmnRes] = await Promise.all([
           api.get(`/processes/${processId}`),
           api.get(`/processes/${processId}/assessment`),
+          api.get(`/processes/${processId}/bpmn`).catch(() => null),
         ]);
 
         if (!mounted) return;
 
         setState({ loading: false, data: processData.data, error: "" });
+        setBpmnXml(bpmnRes?.data?.data || null);
         setAssessment(assessmentData.data.requirements || []);
         setSavedAssessment(assessmentData.data.requirements || []);
         setAssessmentMeta({
@@ -304,7 +307,7 @@ export default function ProcessDetailsPage() {
             </button>
           </Link>
         </div>
-        <AutoBpmnViewer processData={process} />
+        <AutoBpmnViewer processData={process} bpmnXml={bpmnXml} />
       </section>
 
       <section className="saas-card p-5">
