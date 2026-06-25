@@ -25,6 +25,27 @@ export default function DocumentsPage() {
   const [form, setForm] = useState({ file: null, taskId: "", processId: "" });
   const [error, setError] = useState("");
 
+  const handleDownload = async (doc) => {
+    try {
+      const token = localStorage.getItem("qms_token");
+      const response = await fetch(`/api/documents/${doc.id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
   const load = async () => {
     try {
       const [docRes, taskRes, processRes] = await Promise.all([
@@ -128,14 +149,13 @@ export default function DocumentsPage() {
               <td className="px-4 py-3">{doc.process?.name ? <Badge tone="slate">{doc.process.name}</Badge> : "-"}</td>
               <td className="px-4 py-3 text-slate-600">{doc.uploadedBy?.fullName}</td>
               <td className="px-4 py-3">
-                <a
-                  href={`/api/documents/${doc.id}/download`}
+                <button
+                  onClick={() => handleDownload(doc)}
                   className="saas-btn saas-btn-subtle inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
-                  download
                 >
                   <Download size={12} />
                   {text("Telecharger", "Download")}
-                </a>
+                </button>
               </td>
             </tr>
           ))}
