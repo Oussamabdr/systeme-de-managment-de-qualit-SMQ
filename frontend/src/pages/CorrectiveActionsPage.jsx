@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
@@ -19,6 +21,14 @@ const initialForm = {
   nonConformityId: "",
   dueDate: "",
 };
+
+function getDueStatus(dueDate) {
+  if (!dueDate) return null;
+  const daysRemaining = Math.ceil((new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+  if (daysRemaining < 0) return "overdue";
+  if (daysRemaining <= 3) return "warning";
+  return null;
+}
 
 export default function CorrectiveActionsPage() {
   const [state, setState] = useState({ loading: true, data: [], error: "" });
@@ -41,13 +51,13 @@ export default function CorrectiveActionsPage() {
 
   async function loadData() {
     try {
-      const [{ data: actionResp }, { data: ncResp }] = await Promise.all([
+      const [actionResp, ncResp] = await Promise.all([
         api.get("/corrective-actions", { params: queryParams }),
         api.get("/non-conformities"),
       ]);
 
-      setState({ loading: false, data: actionResp.data || [], error: "" });
-      setNonConformities(ncResp.data || []);
+      setState({ loading: false, data: actionResp.data?.data || actionResp.data || [], error: "" });
+      setNonConformities(ncResp.data?.data || ncResp.data || []);
     } catch (error) {
       setState({ loading: false, data: [], error: getErrorMessage(error) });
     }
@@ -209,6 +219,18 @@ export default function CorrectiveActionsPage() {
     }));
   };
 
+  const sourceLabels = {
+    MANUAL: text("Manuel", "Manual"),
+    OVERDUE_TASK: text("Tache en retard", "Overdue task"),
+    DELAYED_PROJECT: text("Projet en retard", "Delayed project"),
+    KPI_DEVIATION: text("Ecart KPI", "KPI deviation"),
+  };
+
+  const actionTypeLabels = {
+    CORRECTIVE: text("Corrective", "Corrective"),
+    PREVENTIVE: text("Preventive", "Preventive"),
+  };
+
   const totals = useMemo(() => {
     const list = state.data || [];
     return {
@@ -217,8 +239,68 @@ export default function CorrectiveActionsPage() {
       inProgress: list.filter((item) => item.status === "IN_PROGRESS").length,
       critical: list.filter((item) => item.severity === "CRITICAL").length,
       pendingVerification: list.filter((item) => item.effectivenessStatus !== "VERIFIED").length,
+      corrective: list.filter((item) => item.actionType === "CORRECTIVE").length,
+      preventive: list.filter((item) => item.actionType === "PREVENTIVE").length,
+      overdue: list.filter((item) => item.dueDate && new Date(item.dueDate) < new Date() && item.status !== "DONE").length,
     };
   }, [state.data]);
+
+  const chartData = useMemo(() => {
+    const list = state.data || [];
+    const severityMap = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+    const statusMap = { OPEN: 0, IN_PROGRESS: 0, DONE: 0, CANCELLED: 0 };
+    const sourceMap = { MANUAL: 0, OVERDUE_TASK: 0, DELAYED_PROJECT: 0, KPI_DEVIATION: 0 };
+    const actionTypeMap = { CORRECTIVE: 0, PREVENTIVE: 0 };
+
+    list.forEach((item) => {
+      if (severityMap.hasOwnProperty(item.severity)) severityMap[item.severity]++;
+      if (statusMap.hasOwnProperty(item.status)) statusMap[item.status]++;
+      if (sourceMap.hasOwnProperty(item.source)) sourceMap[item.source]++;
+      if (actionTypeMap.hasOwnProperty(item.actionType)) actionTypeMap[item.actionType]++;
+    });
+
+    const severityData = Object.entries(severityMap).map(([name, value]) => ({ name, value }));
+    const statusData = Object.entries(statusMap).map(([name, value]) => ({ name, value }));
+    const sourceData = Object.entries(sourceMap).map(([name, value]) => ({ name, value }));
+    const actionTypeData = Object.entries(actionTypeMap).map(([name, value]) => ({ name, value }));
+
+    return { severityData, statusData, sourceData, actionTypeData };
+  }, [state.data]);
+
+  const chartColors = {
+    CRITICAL: "#ef4444",
+    HIGH: "#f97316",
+    MEDIUM: "#3b82f6",
+    LOW: "#22c55e",
+    OPEN: "#eab308",
+    IN_PROGRESS: "#3b82f6",
+    DONE: "#22c55e",
+    CANCELLED: "#94a3b8",
+    CORRECTIVE: "#8b5cf6",
+    PREVENTIVE: "#06b6d4",
+    MANUAL: "#6366f1",
+    OVERDUE_TASK: "#f97316",
+    DELAYED_PROJECT: "#ef4444",
+    KPI_DEVIATION: "#eab308",
+  };
+
+  const MetricCard = ({ label, value, colorClass = "text-slate-900" }) => (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold ${colorClass}`}>{value}</p>
+    </div>
+  );
+
+  const SimpleTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <p className="text-xs font-semibold text-slate-900">{label}: {payload[0].value}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-4">
@@ -229,35 +311,91 @@ export default function CorrectiveActionsPage() {
 
       {state.error ? <div className="saas-card p-4 text-rose-700">{state.error}</div> : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{text("CAPA total", "Total CAPA")}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{totals.total}</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label={text("Total", "Total")} value={totals.total} />
+        <MetricCard label={text("En cours", "In progress")} value={totals.inProgress} colorClass="text-sky-700" />
+        <MetricCard label={text("Critiques", "Critical")} value={totals.critical} colorClass="text-rose-700" />
+        <MetricCard label={text("En retard", "Overdue")} value={totals.overdue} colorClass="text-amber-700" />
+      </div>
+
+      <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <Card className="p-5">
+          <CardHeader title={text("Gravite", "Severity")} subtitle={text("Repartition par gravite.", "Distribution by severity.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={chartData.severityData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
+                  {chartData.severityData.map((entry) => (
+                    <Cell key={entry.name} fill={chartColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Pie>
+                <Tooltip content={<SimpleTooltip />} />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Open</p>
-          <p className="mt-2 text-3xl font-semibold text-amber-700">{totals.open}</p>
+
+        <Card className="p-5">
+          <CardHeader title={text("Statut", "Status")} subtitle={text("Repartition par statut.", "Distribution by status.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData.statusData} layout="vertical">
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
+                <Tooltip content={<SimpleTooltip />} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {chartData.statusData.map((entry) => (
+                    <Cell key={entry.name} fill={chartColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">In Progress</p>
-          <p className="mt-2 text-3xl font-semibold text-sky-700">{totals.inProgress}</p>
+
+        <Card className="p-5">
+          <CardHeader title={text("Type", "Action Type")} subtitle={text("Correctives vs preventives.", "Corrective vs preventive.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={chartData.actionTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
+                  {chartData.actionTypeData.map((entry) => (
+                    <Cell key={entry.name} fill={chartColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Pie>
+                <Tooltip content={<SimpleTooltip />} />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Critical CAPA</p>
-          <p className="mt-2 text-3xl font-semibold text-rose-800">{totals.critical}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Pending Verification</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{totals.pendingVerification}</p>
+
+        <Card className="p-5">
+          <CardHeader title={text("Source", "Source")} subtitle={text("Provenance des actions.", "Source of actions.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData.sourceData}>
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip content={<SimpleTooltip />} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {chartData.sourceData.map((entry) => (
+                    <Cell key={entry.name} fill={chartColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.3fr_0.7fr]">
         <Card className="p-5">
           <CardHeader
             title={text("Actions ouvertes", "Open actions")}
-            subtitle={text("Liste filtree par statut, severite et type.", "List filtered by status, severity, and type.")}
-            action={<Badge tone="amber">{state.data.length}</Badge>}
+            subtitle={text("Liste filtree par statut, severite, type et source.", "List filtered by status, severity, type, and source.")}
+            action={<Badge tone="blue">{state.data.length}</Badge>}
           />
 
           <div className="mb-3 grid gap-2 md:grid-cols-3">
@@ -287,46 +425,82 @@ export default function CorrectiveActionsPage() {
             <p className="text-sm text-slate-500">Loading corrective actions...</p>
           ) : state.data.length ? (
             <div className="space-y-2">
-              {state.data.map((item) => (
-                <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                    <div className="flex items-center gap-1.5">
-                      <Badge tone={item.severity === "CRITICAL" ? "red" : item.severity === "HIGH" ? "amber" : item.severity === "MEDIUM" ? "blue" : "green"}>
-                        {item.severity}
-                      </Badge>
-                      <Badge tone={item.status === "DONE" ? "green" : item.status === "IN_PROGRESS" ? "blue" : item.status === "CANCELLED" ? "slate" : "amber"}>
-                        {item.status}
-                      </Badge>
+              {state.data.map((item) => {
+                const dueStatus = getDueStatus(item.dueDate);
+                const isOverdue = dueStatus === "overdue";
+                const isWarning = dueStatus === "warning";
+
+                const statusColor = item.status === "DONE" ? "green" : item.status === "IN_PROGRESS" ? "sky" : item.status === "CANCELLED" ? "slate" : "amber";
+
+                return (
+                  <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                          <Badge tone="purple">{actionTypeLabels[item.actionType]}</Badge>
+                          <Badge tone={item.severity === "CRITICAL" ? "red" : item.severity === "HIGH" ? "amber" : item.severity === "MEDIUM" ? "blue" : "green"}>
+                            {item.severity}
+                          </Badge>
+                          <Badge tone={statusColor}>{item.status}</Badge>
+                          {isOverdue && <Badge tone="red" className="text-xs">{'>'} {text("Fut" , "late")}</Badge>}
+                          {isWarning && <Badge tone="amber" className="text-xs">{'<'} 3 {text("jours restants", "days left")}</Badge>}
+                        </div>
+                        {item.source && (
+                          <p className="text-xs font-medium text-slate-600 mb-1">
+                            {text("Source", "Source")}: {sourceLabels[item.source]}
+                          </p>
+                        )}
+                        {item.dueDate && (
+                          <p className="text-xs font-medium mb-1">
+                            {text("Date limite", "Due date")}: {new Date(item.dueDate).toLocaleDateString()}{' '}
+                            {isOverdue && <span className="text-rose-600 font-semibold">{''}{text("expire", "expired")}</span>}
+                          </p>
+                        )}
+                        {(item.processName || item.projectName) && (
+                          <p className="text-xs text-slate-500 mb-1">
+                            {item.processName && <span>{item.processName}</span>}
+                            {item.processName && item.projectName && ' • '}
+                            {item.projectName && <span>{item.projectName}</span>}
+                          </p>
+                        )}
+                        {item.isoClause && (
+                          <p className="text-xs text-slate-500">
+                            {text("Clause ISO", "ISO clause")}: {item.isoClause}
+                          </p>
+                        )}
+                      </div>
+                      {item.nonConformity?.title && (
+                        <Badge tone="slate" className="text-xs">
+                          NC: {item.nonConformity.title}
+                        </Badge>
+                      )}
                     </div>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">
-                    NC: {item.nonConformity?.title || "N/A"} | Effectiveness: {item.effectivenessStatus} | Owner: {item.owner?.fullName || "Unassigned"}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {item.status === "OPEN" ? (
-                      <Button
-                        variant="subtle"
-                        className="text-xs"
-                        onClick={() => quickStatusUpdate(item.id, "IN_PROGRESS")}
-                        disabled={updatingId === item.id}
-                      >
-                        Start Action
-                      </Button>
-                    ) : null}
-                    {item.status !== "CANCELLED" && item.status !== "DONE" ? (
-                      <Button
-                        variant="subtle"
-                        className="text-xs"
-                        onClick={() => quickStatusUpdate(item.id, "CANCELLED")}
-                        disabled={updatingId === item.id}
-                      >
-                        Cancel
-                      </Button>
-                    ) : null}
-                  </div>
-                </article>
-              ))}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {item.status === "OPEN" ? (
+                        <Button
+                          variant="subtle"
+                          className="text-xs"
+                          onClick={() => quickStatusUpdate(item.id, "IN_PROGRESS")}
+                          disabled={updatingId === item.id}
+                        >
+                          {text("Demarrer l'action", "Start action")}
+                        </Button>
+                      ) : null}
+                      {item.status !== "CANCELLED" && item.status !== "DONE" ? (
+                        <Button
+                          variant="subtle"
+                          className="text-xs"
+                          onClick={() => quickStatusUpdate(item.id, "CANCELLED")}
+                          disabled={updatingId === item.id}
+                        >
+                          {text("Annuler", "Cancel")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-slate-500">No corrective action found for selected filters.</p>

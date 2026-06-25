@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Mail, ShieldAlert, TriangleAlert } from "lucide-react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import api from "../api/client";
 import PageHeader from "../components/ui/PageHeader";
 import { getErrorMessage } from "../utils/http";
@@ -47,6 +48,40 @@ export default function NotificationsPage() {
 
   const { overdueTasks = [], delayedProjects = [], receivedReports = [] } = state.data || {};
 
+  const chartData = {
+    inbox: [
+      { name: text("Rapports", "Reports"), value: receivedReports.length, color: "#3b82f6" },
+      { name: text("Taches en retard", "Overdue tasks"), value: overdueTasks.length, color: "#ef4444" },
+      { name: text("Projets retardes", "Delayed projects"), value: delayedProjects.length, color: "#f97316" },
+    ],
+    severity: Object.entries(
+      receivedReports.reduce((acc, r) => {
+        acc[r.severity] = (acc[r.severity] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([name, value]) => ({ name, value })),
+    status: Object.entries(
+      receivedReports.reduce((acc, r) => {
+        acc[r.status] = (acc[r.status] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([name, value]) => ({ name, value })),
+  };
+
+  const severityColors = { CRITICAL: "#ef4444", HIGH: "#f97316", MEDIUM: "#3b82f6", LOW: "#22c55e" };
+  const statusColors = { OPEN: "#eab308", IN_PROGRESS: "#3b82f6", DONE: "#22c55e", CANCELLED: "#94a3b8" };
+
+  const SimpleTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <p className="text-xs font-semibold text-slate-900">{label}: {payload[0].value}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -56,6 +91,61 @@ export default function NotificationsPage() {
           "A clear place to see received reports, alerts, and items to handle.",
         )}
       />
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <Card className="p-5">
+          <CardHeader title={text("Distribution", "Distribution")} subtitle={text("Vue d ensemble.", "Overview.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={chartData.inbox} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
+                  {chartData.inbox.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<SimpleTooltip />} />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <CardHeader title={text("Severite rapports", "Report severity")} subtitle={text("Repartition par gravite.", "By severity.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData.severity}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip content={<SimpleTooltip />} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {chartData.severity.map((entry) => (
+                    <Cell key={entry.name} fill={severityColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <CardHeader title={text("Statut rapports", "Report status")} subtitle={text("Repartition par statut.", "By status.")} />
+          <div className="mt-3 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData.status}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip content={<SimpleTooltip />} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {chartData.status.map((entry) => (
+                    <Cell key={entry.name} fill={statusColors[entry.name] || "#94a3b8"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="p-5">
@@ -68,40 +158,79 @@ export default function NotificationsPage() {
             action={<Badge tone="blue">{receivedReports.length}</Badge>}
           />
           <div className="mt-4 space-y-3">
-            {receivedReports.map((report) => (
-              <article key={report.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{report.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {text("Envoye par", "Sent by")} {report.createdBy?.fullName || "-"} • {roleLabel(report.createdBy?.role, text)}
-                    </p>
+            {receivedReports.map((report) => {
+              const dueOver = report.dueDate && new Date(report.dueDate) < new Date() && report.status !== "DONE";
+              return (
+                <article key={report.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900">{report.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {text("Envoye par", "Sent by")} {report.createdBy?.fullName || "-"} • {roleLabel(report.createdBy?.role, text)} • {new Date(report.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {report.actionType && (
+                        <Badge tone="purple">
+                          {report.actionType}
+                        </Badge>
+                      )}
+                      <Badge tone={report.severity === "CRITICAL" ? "red" : report.severity === "HIGH" ? "amber" : "blue"}>
+                        {report.severity}
+                      </Badge>
+                      <Badge tone="slate">{report.status}</Badge>
+                      {dueOver && <Badge tone="red">{text("Expire", "Overdue")}</Badge>}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge tone={report.severity === "CRITICAL" ? "red" : report.severity === "HIGH" ? "amber" : "blue"}>
-                      {report.severity}
-                    </Badge>
-                    <Badge tone="slate">{report.status}</Badge>
+                  <p className="mt-3 text-sm text-slate-700 whitespace-pre-line">{report.description}</p>
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
+                      <span className="block font-semibold text-slate-900">{text("Destinataire", "Recipient")}</span>
+                      {report.owner?.fullName || text("Role cible", "Target role")}
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
+                      <span className="block font-semibold text-slate-900">{text("Source", "Source")}</span>
+                      {report.source || "-"}
+                    </div>
+                    {report.dueDate && (
+                      <div className={`rounded-lg border px-3 py-2 text-xs ${dueOver ? "border-rose-200 bg-rose-50/60 text-rose-700" : "border-slate-200 bg-white/80 text-slate-600"}`}>
+                        <span className="block font-semibold text-slate-900">{text("Date limite", "Due date")}</span>
+                        {new Date(report.dueDate).toLocaleDateString()} {dueOver && <span className="font-semibold">({text("expire", "expired")})</span>}
+                      </div>
+                    )}
+                    {(report.processName || report.projectName || report.isoClause) && (
+                      <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
+                        <span className="block font-semibold text-slate-900">{text("Lien", "Link")}</span>
+                        {report.processName && <span>{report.processName}</span>}
+                        {report.projectName && <span>{report.processName ? " • " : ""}{report.projectName}</span>}
+                        {report.isoClause && <span>{(report.processName || report.projectName) ? " • " : ""}ISO {report.isoClause}</span>}
+                      </div>
+                    )}
+                    {report.containmentAction && (
+                      <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 md:col-span-2">
+                        <span className="block font-semibold text-slate-900">{text("Action de confinement", "Containment action")}</span>
+                        {report.containmentAction}
+                      </div>
+                    )}
+                    {report.rootCause && (
+                      <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 md:col-span-2">
+                        <span className="block font-semibold text-slate-900">{text("Cause racine", "Root cause")}</span>
+                        {report.rootCause}
+                      </div>
+                    )}
+                    <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
+                      <span className="block font-semibold text-slate-900">{text("Mise a jour", "Updated")}</span>
+                      {new Date(report.updatedAt).toLocaleString()}
+                    </div>
                   </div>
-                </div>
-                <p className="mt-3 text-sm text-slate-700 whitespace-pre-line">{report.description}</p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
-                    <span className="block font-semibold text-slate-900">{text("Destinataire", "Recipient")}</span>
-                    {report.owner?.fullName || text("Role cible", "Target role")}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link className="saas-btn saas-btn-subtle px-3 py-2 text-sm" to="/corrective-actions">
+                      {text("Ouvrir le suivi", "Open follow-up")}
+                    </Link>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
-                    <span className="block font-semibold text-slate-900">{text("Traitement", "Handling")}</span>
-                    {text("Disponible dans le suivi CAPA", "Available in CAPA follow-up")}
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link className="saas-btn saas-btn-subtle px-3 py-2 text-sm" to="/corrective-actions">
-                    {text("Ouvrir le suivi", "Open follow-up")}
-                  </Link>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
             {receivedReports.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-5 text-sm text-slate-500">
                 {text("Aucun rapport recu pour le moment.", "No received reports for now.")}
