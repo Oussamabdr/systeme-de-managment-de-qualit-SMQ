@@ -9,6 +9,7 @@ import { Select } from "../components/ui/Input";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 import { useUiStore } from "../store/uiStore";
+import { useAuthStore } from "../store/authStore";
 import { t } from "../utils/i18n";
 
 const initialForm = {
@@ -27,6 +28,8 @@ export default function NonConformitiesPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
   const language = useUiStore((state) => state.language);
+  const user = useAuthStore((state) => state.user);
+  const canWriteNc = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER" || user?.role === "CAQ";
   const text = (fr, en) => t(language, fr, en);
 
   const ncTemplates = {
@@ -274,6 +277,7 @@ export default function NonConformitiesPage() {
                   <p className="mt-1 text-xs text-slate-600">
                     Process: {item.process?.name || "Not linked"} | CAPA linked: {item.correctiveActions?.length || 0}
                   </p>
+                  {canWriteNc ? (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {item.status !== "ANALYSIS" ? (
                       <Button
@@ -296,6 +300,7 @@ export default function NonConformitiesPage() {
                       </Button>
                     ) : null}
                   </div>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -304,6 +309,7 @@ export default function NonConformitiesPage() {
           )}
         </Card>
 
+        {canWriteNc ? (
         <Card className="p-5">
           <CardHeader
             title={text("Declarer une non-conformite", "Declare Non-Conformity")}
@@ -407,6 +413,7 @@ export default function NonConformitiesPage() {
             </Button>
           </form>
         </Card>
+        ) : null}
       </section>
     </div>
   );

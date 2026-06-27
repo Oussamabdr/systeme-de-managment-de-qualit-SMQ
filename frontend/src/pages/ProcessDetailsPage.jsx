@@ -21,7 +21,8 @@ const VERACITY_OPTIONS = [
 export default function ProcessDetailsPage() {
   const { processId } = useParams();
   const user = useAuthStore((state) => state.user);
-  const canEditAssessment = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER";
+  const canEdit = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER";
+  const canEditAssessment = canEdit;
   const [state, setState] = useState({ loading: true, data: null, error: "" });
   const [bpmnXml, setBpmnXml] = useState(null);
   const [assessment, setAssessment] = useState([]);
@@ -301,11 +302,13 @@ export default function ProcessDetailsPage() {
       <section className="saas-card p-5">
         <div className="flex items-start justify-between gap-4">
           <CardHeader title="Process Flow" subtitle="Automated BPMN map generated from inputs, objectives, and outputs." />
-          <Link to={`/processes/${processId}/bpmn`}>
-            <button className="saas-btn saas-btn-subtle text-sm" type="button">
-              Edit BPMN
-            </button>
-          </Link>
+          {canEdit ? (
+            <Link to={`/processes/${processId}/bpmn`}>
+              <button className="saas-btn saas-btn-subtle text-sm" type="button">
+                Edit BPMN
+              </button>
+            </Link>
+          ) : null}
         </div>
         <AutoBpmnViewer processData={process} bpmnXml={bpmnXml} />
       </section>

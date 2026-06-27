@@ -1,0 +1,364 @@
+// ============================================================
+// DBML Schema - ISO 9001 Quality Management System (SMQ)
+// ============================================================
+// Paste this content at https://dbdiagram.io/d to visualize
+// ============================================================
+
+// ---- Enums ----
+
+enum Role {
+  ADMIN
+  PROJECT_MANAGER
+  TEAM_MEMBER
+  CAQ
+  AUDITEUR_EXTERNE
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  DELAYED
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum CorrectiveActionStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum CorrectiveActionSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CorrectiveActionSource {
+  OVERDUE_TASK
+  DELAYED_PROJECT
+  KPI_DEVIATION
+  MANUAL
+}
+
+enum CorrectiveActionType {
+  CORRECTIVE
+  PREVENTIVE
+}
+
+enum EffectivenessStatus {
+  PENDING
+  VERIFIED
+  NOT_EFFECTIVE
+}
+
+enum NonConformityStatus {
+  OPEN
+  ANALYSIS
+  CLOSED
+}
+
+enum VeracityLevel {
+  FALSE
+  RATHER_FALSE
+  RATHER_TRUE
+  TRUE
+}
+
+// ---- Tables ----
+
+Table User {
+  id                    String    [pk, default: `cuid()`]
+  fullName              String    [not null]
+  email                 String    [unique, not null]
+  passwordHash          String    [not null]
+  role                  Role      [default: `TEAM_MEMBER`]
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+}
+
+Table Department {
+  id                    String    [pk, default: `cuid()`]
+  name                  String    [unique, not null]
+  code                  String    [unique, not null]
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+}
+
+Table Project {
+  id                    String    [pk, default: `cuid()`]
+  name                  String    [not null]
+  description           String
+  ownerId               String
+  status                ProjectStatus [default: `PLANNED`]
+  startDate             DateTime
+  endDate               DateTime
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+}
+
+Table Process {
+  id                    String    [pk, default: `cuid()`]
+  name                  String    [not null]
+  description           String
+  departmentId          String
+  objectives            String[]
+  responsiblePerson     String    [not null]
+  inputs                String[]
+  outputs               String[]
+  knowledgeItems        String[]
+  indicators            Json
+  bpmnXml               String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (departmentId)
+  }
+}
+
+Table ProcessRequirementAssessment {
+  id                    String    [pk, default: `cuid()`]
+  processId             String    [not null]
+  requirementCode       String    [not null]
+  requirementName       String    [not null]
+  score                 Float     [default: 0]
+  veracityLevel         VeracityLevel [default: `FALSE`]
+  notes                 String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (processId)
+    (processId, requirementCode) [unique]
+  }
+}
+
+Table Kpi {
+  id                    String    [pk, default: `cuid()`]
+  name                  String    [not null]
+  description           String
+  target                Float     [not null]
+  current               Float     [default: 0]
+  unit                  String
+  processId             String    [not null]
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (processId)
+  }
+}
+
+Table ProjectProcess {
+  projectId             String    [not null, pk]
+  processId             String    [not null, pk]
+}
+
+Table Task {
+  id                    String    [pk, default: `cuid()`]
+  title                 String    [not null]
+  description           String
+  status                TaskStatus [default: `TODO`]
+  dueDate               DateTime
+  plannedHours          Float
+  actualHours           Float
+  startedAt             DateTime
+  completedAt           DateTime
+  projectId             String    [not null]
+  processId             String    [not null]
+  assigneeId            String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+}
+
+Table CorrectiveAction {
+  id                    String    [pk, default: `cuid()`]
+  title                 String    [not null]
+  description           String
+  recommendation        String
+  actionType            CorrectiveActionType [default: `CORRECTIVE`]
+  status                CorrectiveActionStatus [default: `OPEN`]
+  severity              CorrectiveActionSeverity [default: `MEDIUM`]
+  source                CorrectiveActionSource [default: `MANUAL`]
+  rootCause             String
+  containmentAction     String
+  effectivenessCriteria String
+  effectivenessStatus   EffectivenessStatus [default: `PENDING`]
+  verificationComment   String
+  verifiedAt            DateTime
+  nonConformityId       String
+  isoClause             String
+  dueDate               DateTime
+  projectId             String
+  processId             String
+  taskId                String
+  ownerId               String
+  createdById           String    [not null]
+  verifiedById          String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (status)
+    (severity)
+    (projectId)
+    (processId)
+    (taskId)
+    (ownerId)
+    (nonConformityId)
+    (verifiedById)
+  }
+}
+
+Table NonConformity {
+  id                    String    [pk, default: `cuid()`]
+  title                 String    [not null]
+  description           String
+  status                NonConformityStatus [default: `OPEN`]
+  severity              CorrectiveActionSeverity [default: `MEDIUM`]
+  detectedAt            DateTime  [default: `now()`]
+  processId             String
+  detectedById          String    [not null]
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (status)
+    (severity)
+    (processId)
+    (detectedById)
+  }
+}
+
+Table Document {
+  id                    String    [pk, default: `cuid()`]
+  name                  String    [not null]
+  mimeType              String    [not null]
+  size                  Int       [not null]
+  path                  String    [not null]
+  processId             String
+  taskId                String
+  uploadedById          String    [not null]
+  createdAt             DateTime  [default: `now()`]
+
+  indexes {
+    (processId)
+    (taskId)
+  }
+}
+
+Table Criterion {
+  id                    String    [pk, default: `cuid()`]
+  code                  String    [unique, not null]
+  title                 String    [not null]
+  description           String
+  clause                String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+}
+
+Table ProcessCriterion {
+  id                    String    [pk, default: `cuid()`]
+  processId             String    [not null]
+  criterionId           String    [not null]
+  selected              Boolean   [default: true]
+  score                 Float     [default: 0]
+  rate                  Int
+  veracityLevel         VeracityLevel [default: `FALSE`]
+  notes                 String
+  createdAt             DateTime  [default: `now()`]
+  updatedAt             DateTime  [not null]
+
+  indexes {
+    (processId)
+    (criterionId)
+    (processId, criterionId) [unique]
+  }
+}
+
+Table CriterionEvidence {
+  id                    String    [pk, default: `cuid()`]
+  processCriterionId    String    [not null]
+  type                  String
+  description           String
+  documentId            String
+  url                   String
+  createdAt             DateTime  [default: `now()`]
+}
+
+// ---- Relationships ----
+
+// Department -> Process
+Ref: Department.id < Process.departmentId
+
+// Process -> ProcessRequirementAssessment
+Ref: Process.id < ProcessRequirementAssessment.processId
+
+// Process -> Kpi
+Ref: Process.id < Kpi.processId
+
+// Project <-> Process (M2M via ProjectProcess)
+Ref: ProjectProcess.projectId > Project.id
+Ref: ProjectProcess.processId > Process.id
+
+// Project -> Task
+Ref: Project.id < Task.projectId
+
+// Process -> Task
+Ref: Process.id < Task.processId
+
+// User -> Task (assignee)
+Ref: User.id < Task.assigneeId
+
+// NonConformity -> CorrectiveAction
+Ref: NonConformity.id < CorrectiveAction.nonConformityId
+
+// Project -> CorrectiveAction
+Ref: Project.id < CorrectiveAction.projectId
+
+// Process -> CorrectiveAction
+Ref: Process.id < CorrectiveAction.processId
+
+// Task -> CorrectiveAction
+Ref: Task.id < CorrectiveAction.taskId
+
+// User -> CorrectiveAction (owner)
+Ref: User.id < CorrectiveAction.ownerId
+
+// User -> CorrectiveAction (createdBy)
+Ref: User.id < CorrectiveAction.createdById
+
+// User -> CorrectiveAction (verifiedBy)
+Ref: User.id < CorrectiveAction.verifiedById
+
+// Process -> NonConformity
+Ref: Process.id < NonConformity.processId
+
+// User -> NonConformity (detectedBy)
+Ref: User.id < NonConformity.detectedById
+
+// Process -> Document
+Ref: Process.id < Document.processId
+
+// Task -> Document
+Ref: Task.id < Document.taskId
+
+// User -> Document (uploadedBy)
+Ref: User.id < Document.uploadedById
+
+// Criterion -> ProcessCriterion
+Ref: Criterion.id < ProcessCriterion.criterionId
+
+// Process -> ProcessCriterion
+Ref: Process.id < ProcessCriterion.processId
+
+// ProcessCriterion -> CriterionEvidence
+Ref: ProcessCriterion.id < CriterionEvidence.processCriterionId

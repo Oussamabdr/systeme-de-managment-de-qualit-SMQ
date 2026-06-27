@@ -53,8 +53,9 @@ export default function TasksPage() {
   const user = useAuthStore((state) => state.user);
   const isProjectManager = user?.role === "PROJECT_MANAGER";
   const isTeamMember = user?.role === "TEAM_MEMBER";
-  const canCreateTask = isProjectManager;
-  const canManageAssignment = isProjectManager;
+  const isAdmin = user?.role === "ADMIN";
+  const canCreateTask = isAdmin || isProjectManager;
+  const canManageAssignment = isAdmin || isProjectManager;
 
   const processFilterFromUrl = searchParams.get("processId") || "";
   const quickAssign = searchParams.get("quickAssign") === "1";

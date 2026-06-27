@@ -16,6 +16,7 @@ export default function DocumentsPage() {
   const user = useAuthStore((state) => state.user);
   const language = useUiStore((state) => state.language);
   const isTeamMember = user?.role === "TEAM_MEMBER";
+  const canUpload = user?.role !== "AUDITEUR_EXTERNE";
 
   const text = (fr, en) => t(language, fr, en);
 
@@ -93,6 +94,7 @@ export default function DocumentsPage() {
     <div className="space-y-4">
       <PageHeader title={text("Documents qualite", "Quality documents")} subtitle={text("Documents rattaches aux taches et aux processus.", "Documents linked to tasks and processes.")} />
 
+      {canUpload ? (
       <section className="saas-card p-5">
         <CardHeader title={text("Ajouter un document", "Add document")} subtitle={text("Joindre un fichier a une tache ou a un processus.", "Attach a file to a task or process.")} />
         {isTeamMember ? <p className="mt-2 text-xs text-slate-500">{text("Les membres de l'equipe ne peuvent telecharger que vers leurs taches assignees.", "Team members can upload only to their assigned tasks.")}</p> : null}
@@ -131,6 +133,7 @@ export default function DocumentsPage() {
           <Button className="md:col-span-3">{text("Telecharger", "Upload")}</Button>
         </form>
       </section>
+      ) : null}
 
       <Card className="p-0 overflow-hidden">
         <div className="px-5 pt-5">

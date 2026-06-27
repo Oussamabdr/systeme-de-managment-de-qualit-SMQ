@@ -91,8 +91,8 @@ async function createTask(data) {
   delete payload.__user;
   normalizeResourceFields(payload);
 
-  if (!actor || actor.role !== "PROJECT_MANAGER") {
-    throw new ApiError(403, "Only project managers can create tasks");
+  if (!actor || !["ADMIN", "PROJECT_MANAGER"].includes(actor.role)) {
+    throw new ApiError(403, "Only administrators and project managers can create tasks");
   }
 
   if (payload.status === "IN_PROGRESS") {

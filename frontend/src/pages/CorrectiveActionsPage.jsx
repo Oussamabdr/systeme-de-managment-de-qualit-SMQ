@@ -11,6 +11,7 @@ import { Select } from "../components/ui/Input";
 import { useFormValidation, fieldValidationRules } from "../hooks/useFormValidation";
 import { FormErrors, FormField, SuccessMessage } from "../components/form/FormField";
 import { useUiStore } from "../store/uiStore";
+import { useAuthStore } from "../store/authStore";
 import { t } from "../utils/i18n";
 
 const initialForm = {
@@ -39,6 +40,8 @@ export default function CorrectiveActionsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const { errors, touched, isSubmitting, setIsSubmitting, markFieldTouched, validateField, clearErrors, handleApiError } = useFormValidation();
   const language = useUiStore((state) => state.language);
+  const user = useAuthStore((state) => state.user);
+  const canWriteCapa = user?.role === "ADMIN" || user?.role === "PROJECT_MANAGER" || user?.role === "CAQ";
   const text = (fr, en) => t(language, fr, en);
 
   const queryParams = useMemo(() => {
@@ -476,6 +479,7 @@ export default function CorrectiveActionsPage() {
                         </Badge>
                       )}
                     </div>
+                    {canWriteCapa ? (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.status === "OPEN" ? (
                         <Button
@@ -498,6 +502,7 @@ export default function CorrectiveActionsPage() {
                         </Button>
                       ) : null}
                     </div>
+                    ) : null}
                   </article>
                 );
               })}
@@ -507,6 +512,7 @@ export default function CorrectiveActionsPage() {
           )}
         </Card>
 
+        {canWriteCapa ? (
         <Card className="p-5">
           <CardHeader
             title={text("Creer une CAPA", "Create CAPA")}
@@ -641,6 +647,7 @@ export default function CorrectiveActionsPage() {
             </Button>
           </form>
         </Card>
+        ) : null}
       </section>
     </div>
   );

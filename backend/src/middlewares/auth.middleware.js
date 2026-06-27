@@ -67,6 +67,8 @@ function authorize(...roles) {
       return next(new ApiError(401, "Unauthorized"));
     }
 
+    console.log("AUTHORIZE CHECK:", { roles, userRole: req.user.role, includes: roles.includes(req.user.role) });
+
     if (!roles.includes(req.user.role)) {
       return next(new ApiError(403, "Forbidden"));
     }

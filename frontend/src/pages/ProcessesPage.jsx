@@ -47,6 +47,7 @@ export default function ProcessesPage() {
   const language = useUiStore((state) => state.language);
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "ADMIN";
+  const canManageProcesses = isAdmin || user?.role === "PROJECT_MANAGER";
   const text = useCallback((fr, en) => t(language, fr, en), [language]);
 
   const loadProcesses = useCallback(async () => {
@@ -208,6 +209,7 @@ export default function ProcessesPage() {
           </div>
         </Card>
 
+        {canManageProcesses ? (
         <Card className="p-5">
           <CardHeader title={text("Creer un processus", "Create Process")} subtitle={text("Ajouter une definition ISO controlee.", "Add a controlled ISO process definition.")} />
           <form className="mt-3 space-y-3" onSubmit={onSubmit}>
@@ -290,6 +292,7 @@ export default function ProcessesPage() {
             </form>
           ) : null}
         </Card>
+        ) : null}
       </div>
     </div>
   );
